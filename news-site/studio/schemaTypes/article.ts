@@ -1,7 +1,5 @@
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-export const CATEGORIES = ['World', 'Politics', 'Tech', 'Business', 'Culture', 'Sport'] as const
-
 export const article = defineType({
   name: 'article',
   title: 'Article',
@@ -40,7 +38,7 @@ export const article = defineType({
       title: 'Category',
       type: 'string',
       options: {
-        list: CATEGORIES.map((title) => ({title, value: title})),
+        list: ['World', 'Politics', 'Tech', 'Business', 'Culture', 'Sport'],
       },
     }),
     defineField({

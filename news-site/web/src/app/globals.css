@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
+/*
+ * Meridian — original visual identity.
+ * Ash-toned grounds (warm greys) with an antique gold accent.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --paper: #f7f6f3;
+  --surface: #efeee9;
+  --ink: #22221f;
+  --ink-soft: #6b6b63;
+  --accent: #96751f;
+  --rule: #dcdad2;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /*
+   * Header bands are deliberately fixed in both colour schemes: the utility bar
+   * stays dark ash and the masthead stays near-white, so the masthead reads as
+   * one lighter "formal" moment regardless of the visitor's theme.
+   */
+  --utility-bg: #1c1c19;
+  --utility-ink: #d7d4cb;
+  --masthead-bg: #ffffff;
+  --masthead-ink: #1b1b18;
+  --masthead-soft: #6f6e66;
+  --masthead-rule: #e3e0d7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --paper: #161614;
+    --surface: #1e1e1b;
+    --ink: #edebe4;
+    --ink-soft: #a3a29a;
+    --accent: #d4af4f;
+    --rule: #322f29;
   }
 }
 
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-accent: var(--accent);
+  --color-rule: var(--rule);
+
+  --color-utility-bg: var(--utility-bg);
+  --color-utility-ink: var(--utility-ink);
+  --color-masthead-bg: var(--masthead-bg);
+  --color-masthead-ink: var(--masthead-ink);
+  --color-masthead-soft: var(--masthead-soft);
+  --color-masthead-rule: var(--masthead-rule);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-newsreader);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Small caps-ish label used for categories and section headings. */
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }

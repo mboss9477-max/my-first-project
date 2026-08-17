@@ -3,20 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleBody } from "@/components/ArticleBody";
+import { formatDate } from "@/lib/format";
 import { client } from "@/sanity/client";
-import { urlForImage } from "@/sanity/image";
+import { displayDimensions, urlForImage } from "@/sanity/image";
 import { ARTICLE_QUERY, type Article } from "@/sanity/queries";
 
 export const revalidate = 60;
-
-function formatDate(value: string | null) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 export default async function ArticlePage({
   params,
@@ -33,27 +25,29 @@ export default async function ArticlePage({
 
   const date = formatDate(article.publishedAt);
 
+  const hero = article.heroImage;
+  // Sanity stores asset dimensions on upload; the fallback only guards against
+  // an asset whose metadata has not been processed yet.
+  const heroSize = hero
+    ? (displayDimensions(hero, 1600) ?? { width: 1600, height: 900 })
+    : null;
+
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <Link
-        href="/"
-        className="text-sm text-black/60 hover:underline dark:text-white/60"
-      >
+    <main className="mx-auto max-w-2xl px-6 py-10">
+      <Link href="/" className="text-sm text-ink-soft hover:text-accent">
         ← Back to all stories
       </Link>
 
       <article className="mt-8">
         {article.category ? (
-          <p className="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-400">
-            {article.category}
-          </p>
+          <span className="label text-accent">{article.category}</span>
         ) : null}
 
-        <h1 className="mt-2 text-4xl font-bold leading-tight tracking-tight">
+        <h1 className="mt-2 font-serif text-4xl leading-[1.15] font-semibold tracking-tight md:text-5xl">
           {article.headline}
         </h1>
 
-        <p className="mt-4 text-sm text-black/60 dark:text-white/60">
+        <p className="mt-4 text-sm text-ink-soft">
           {article.byline ? <span>By {article.byline}</span> : null}
           {article.byline && date ? <span> · </span> : null}
           {date ? (
@@ -61,31 +55,23 @@ export default async function ArticlePage({
           ) : null}
         </p>
 
-        {article.heroImage ? (
-          <figure className="mt-8">
-            <Image
-              src={urlForImage(article.heroImage).width(1600).url()}
-              alt={article.heroImage.alt ?? ""}
-              width={800}
-              height={533}
-              priority
-              className="h-auto w-full rounded"
-            />
-            {article.heroImage.alt ? (
-              <figcaption className="mt-2 text-sm text-black/60 dark:text-white/60">
-                {article.heroImage.alt}
-              </figcaption>
-            ) : null}
-          </figure>
+        {hero && heroSize ? (
+          <Image
+            src={urlForImage(hero).width(heroSize.width).url()}
+            alt={hero.alt ?? ""}
+            width={heroSize.width}
+            height={heroSize.height}
+            priority
+            sizes="(max-width: 672px) 100vw, 672px"
+            className="mt-8 h-auto w-full rounded"
+          />
         ) : null}
 
         <div className="mt-8 text-lg">
           {article.body?.length ? (
             <ArticleBody value={article.body} />
           ) : (
-            <p className="text-black/60 dark:text-white/60">
-              This article has no body content yet.
-            </p>
+            <p className="text-ink-soft">This article has no body content yet.</p>
           )}
         </div>
       </article>

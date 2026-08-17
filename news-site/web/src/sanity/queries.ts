@@ -1,10 +1,13 @@
 import type { PortableTextBlock } from "@portabletext/react";
+import type { SanityImageSource } from "@sanity/image-url";
 
-import type { SanityImageSource } from "./image";
+import type { ImageDimensions } from "./image";
 
-export type HeroImage = {
+type HeroImage = SanityImageSource & {
   alt?: string | null;
-} & SanityImageSource;
+  crop?: { top: number; bottom: number; left: number; right: number } | null;
+  dimensions: ImageDimensions | null;
+};
 
 export type ArticleListItem = {
   _id: string;
@@ -20,6 +23,15 @@ export type Article = ArticleListItem & {
   body: PortableTextBlock[] | null;
 };
 
+/**
+ * Keeps the image object intact (asset ref, hotspot, crop) and pulls the
+ * asset's real pixel dimensions so pages can reserve the right aspect ratio.
+ */
+const HERO_IMAGE = `heroImage{
+    ...,
+    "dimensions": asset->metadata.dimensions{width, height}
+  }`;
+
 /** All articles, newest first. Drafts and slug-less docs are excluded. */
 export const ARTICLES_QUERY = `*[
   _type == "article" && defined(slug.current)
@@ -30,7 +42,7 @@ export const ARTICLES_QUERY = `*[
   byline,
   publishedAt,
   category,
-  heroImage
+  ${HERO_IMAGE}
 }`;
 
 /** A single article by its slug. */
@@ -43,6 +55,11 @@ export const ARTICLE_QUERY = `*[
   byline,
   publishedAt,
   category,
-  heroImage,
-  body
+  ${HERO_IMAGE},
+  body[]{
+    ...,
+    _type == "image" => {
+      "dimensions": asset->metadata.dimensions{width, height}
+    }
+  }
 }`;
