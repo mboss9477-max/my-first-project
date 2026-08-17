@@ -119,6 +119,12 @@ function LeadCell({
           </Link>
         </h3>
 
+        {lead.excerpt ? (
+          <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+            {lead.excerpt}
+          </p>
+        ) : null}
+
         <Meta article={lead} />
 
         {subLinks.length > 0 ? (

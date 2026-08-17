@@ -5,6 +5,7 @@ import type { ImageDimensions } from "./image";
 
 type HeroImage = SanityImageSource & {
   alt?: string | null;
+  caption?: string | null;
   crop?: { top: number; bottom: number; left: number; right: number } | null;
   dimensions: ImageDimensions | null;
 };
@@ -13,8 +14,10 @@ export type ArticleListItem = {
   _id: string;
   headline: string;
   slug: string;
+  excerpt: string | null;
   byline: string | null;
   publishedAt: string | null;
+  /** Dereferenced from the `category` document so consumers still see a name. */
   category: string | null;
   heroImage: HeroImage | null;
 };
@@ -39,9 +42,10 @@ export const ARTICLES_QUERY = `*[
   _id,
   headline,
   "slug": slug.current,
+  excerpt,
   byline,
   publishedAt,
-  category,
+  "category": category->name,
   ${HERO_IMAGE}
 }`;
 
@@ -52,9 +56,10 @@ export const ARTICLE_QUERY = `*[
   _id,
   headline,
   "slug": slug.current,
+  excerpt,
   byline,
   publishedAt,
-  category,
+  "category": category->name,
   ${HERO_IMAGE},
   body[]{
     ...,

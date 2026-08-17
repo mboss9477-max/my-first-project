@@ -56,15 +56,24 @@ export default async function ArticlePage({
         </p>
 
         {hero && heroSize ? (
-          <Image
-            src={urlForImage(hero).width(heroSize.width).url()}
-            alt={hero.alt ?? ""}
-            width={heroSize.width}
-            height={heroSize.height}
-            priority
-            sizes="(max-width: 672px) 100vw, 672px"
-            className="mt-8 h-auto w-full rounded"
-          />
+          <figure className="mt-8">
+            <Image
+              src={urlForImage(hero).width(heroSize.width).url()}
+              alt={hero.alt ?? ""}
+              width={heroSize.width}
+              height={heroSize.height}
+              priority
+              sizes="(max-width: 672px) 100vw, 672px"
+              className="h-auto w-full rounded"
+            />
+            {/* A real caption field now — distinct from alt text, which
+                describes the image rather than captioning it. */}
+            {hero.caption ? (
+              <figcaption className="mt-2 text-sm text-ink-soft">
+                {hero.caption}
+              </figcaption>
+            ) : null}
+          </figure>
         ) : null}
 
         <div className="mt-8 text-lg">

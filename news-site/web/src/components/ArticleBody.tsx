@@ -61,6 +61,12 @@ const components: PortableTextComponents = {
     h4: ({ children }) => (
       <h4 className="mt-6 mb-2 text-lg font-semibold">{children}</h4>
     ),
+    h5: ({ children }) => (
+      <h5 className="mt-6 mb-2 text-base font-semibold">{children}</h5>
+    ),
+    h6: ({ children }) => (
+      <h6 className="label mt-6 mb-2 text-ink-soft">{children}</h6>
+    ),
     blockquote: ({ children }) => (
       <blockquote className="my-6 border-l-4 border-rule pl-4 italic">
         {children}
