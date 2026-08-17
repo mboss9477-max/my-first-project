@@ -9,7 +9,9 @@
   --surface: #efeee9;
   --ink: #22221f;
   --ink-soft: #6b6b63;
-  --accent: #96751f;
+  /* 5.10:1 on --paper and 4.74:1 on --surface: clears WCAG AA for the 11px
+     uppercase category labels. Do not lighten without re-checking contrast. */
+  --accent: #81651b;
   --rule: #dcdad2;
 
   /*

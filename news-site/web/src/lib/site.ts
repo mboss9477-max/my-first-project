@@ -2,6 +2,9 @@
  *  footer, and page metadata. */
 export const SITE_NAME = "CS NEWS";
 
+/** Compact mark for the utility bar, where the full wordmark is too wide. */
+export const SITE_MONOGRAM = "CSN";
+
 export const SITE_TAGLINE = "Independent reporting from around the world.";
 
 export const NAV_CATEGORIES = ["World", "Politics", "Tech", "Business"];

@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 
-import { ACTIVE_CATEGORY, NAV_CATEGORIES, SITE_NAME } from "@/lib/site";
+import {
+  ACTIVE_CATEGORY,
+  NAV_CATEGORIES,
+  SITE_MONOGRAM,
+  SITE_NAME,
+} from "@/lib/site";
 
 const TRENDING_TOPICS = ["Tidal cities", "Four-day week", "Open silicon"];
 
@@ -18,9 +23,9 @@ function SiteMark() {
   return (
     <span
       aria-hidden="true"
-      className="grid size-6 place-items-center border border-accent text-[0.6rem] font-semibold tracking-tight text-accent"
+      className="grid h-6 place-items-center border border-accent px-1.5 text-[0.6rem] font-semibold tracking-tight text-accent"
     >
-      CS
+      {SITE_MONOGRAM}
     </span>
   );
 }
@@ -30,7 +35,7 @@ export function SiteHeader() {
     <header>
       {/* TIER 1 — slim utility bar, always dark ash. */}
       <div className="bg-utility-bg text-utility-ink">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-2">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3.5">
           <Link href="/" aria-label={`${SITE_NAME} home`}>
             <SiteMark />
           </Link>
@@ -74,8 +79,13 @@ export function SiteHeader() {
 
               return (
                 <li key={category} className="shrink-0">
+                  {/*
+                    Not a link yet, so `aria-current="page"` would be misleading:
+                    it describes the current item in a set of navigable links.
+                    Visually-hidden text conveys the same thing honestly until
+                    section routing exists.
+                  */}
                   <span
-                    aria-current={isActive ? "page" : undefined}
                     className={`block cursor-default border-b-2 pb-2.5 text-sm transition-colors ${
                       isActive
                         ? "border-accent font-semibold"
@@ -83,6 +93,9 @@ export function SiteHeader() {
                     }`}
                   >
                     {category}
+                    {isActive ? (
+                      <span className="sr-only"> (current section)</span>
+                    ) : null}
                   </span>
                 </li>
               );
