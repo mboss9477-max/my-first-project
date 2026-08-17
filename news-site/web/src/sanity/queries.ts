@@ -49,6 +49,19 @@ export const ARTICLES_QUERY = `*[
   ${HERO_IMAGE}
 }`;
 
+/** Slugs only — used by generateStaticParams to prerender article routes. */
+export const ARTICLE_SLUGS_QUERY = `*[
+  _type == "article" && defined(slug.current)
+].slug.current`;
+
+/** Minimal projection for sitemap entries. */
+export const SITEMAP_QUERY = `*[
+  _type == "article" && defined(slug.current)
+] | order(publishedAt desc) {
+  "slug": slug.current,
+  publishedAt
+}`;
+
 /** A single article by its slug. */
 export const ARTICLE_QUERY = `*[
   _type == "article" && slug.current == $slug

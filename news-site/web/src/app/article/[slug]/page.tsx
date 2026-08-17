@@ -1,14 +1,117 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleBody } from "@/components/ArticleBody";
 import { formatDate } from "@/lib/format";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { client } from "@/sanity/client";
 import { displayDimensions, urlForImage } from "@/sanity/image";
-import { ARTICLE_QUERY, type Article } from "@/sanity/queries";
+import {
+  ARTICLE_QUERY,
+  ARTICLE_SLUGS_QUERY,
+  type Article,
+} from "@/sanity/queries";
 
 export const revalidate = 60;
+
+/** Prerender every known article; unknown slugs still render on demand. */
+export async function generateStaticParams() {
+  const slugs = await client.fetch<string[]>(ARTICLE_SLUGS_QUERY);
+  return slugs.map((slug) => ({ slug }));
+}
+
+function getArticle(slug: string) {
+  // Called by both generateMetadata and the page; Next dedupes the request.
+  return client.fetch<Article | null>(ARTICLE_QUERY, { slug });
+}
+
+/** 1200x630 crop of the hero, the conventional Open Graph card size. */
+function socialImage(article: Article) {
+  if (!article.heroImage) return null;
+  return urlForImage(article.heroImage)
+    .width(1200)
+    .height(630)
+    .fit("crop")
+    .url();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getArticle(slug);
+
+  if (!article) {
+    return { title: "Article not found" };
+  }
+
+  const description = article.excerpt ?? undefined;
+  const url = `/article/${article.slug}`;
+  const image = socialImage(article);
+
+  return {
+    title: article.headline,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title: article.headline,
+      description,
+      url,
+      siteName: SITE_NAME,
+      locale: "en_GB",
+      publishedTime: article.publishedAt ?? undefined,
+      authors: article.byline ? [article.byline] : undefined,
+      section: article.category ?? undefined,
+      images: image
+        ? [
+            {
+              url: image,
+              width: 1200,
+              height: 630,
+              alt: article.heroImage?.alt ?? article.headline,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.headline,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
+
+/** schema.org NewsArticle — what Google News and rich results read. */
+function newsArticleJsonLd(article: Article) {
+  const image = socialImage(article);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: article.headline,
+    description: article.excerpt ?? undefined,
+    datePublished: article.publishedAt ?? undefined,
+    articleSection: article.category ?? undefined,
+    image: image ? [image] : undefined,
+    author: article.byline
+      ? [{ "@type": "Person", name: article.byline }]
+      : undefined,
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/article/${article.slug}`,
+    },
+  };
+}
 
 export default async function ArticlePage({
   params,
@@ -17,7 +120,7 @@ export default async function ArticlePage({
 }) {
   const { slug } = await params;
 
-  const article = await client.fetch<Article | null>(ARTICLE_QUERY, { slug });
+  const article = await getArticle(slug);
 
   if (!article) {
     notFound();
@@ -34,6 +137,14 @@ export default async function ArticlePage({
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
+      <script
+        type="application/ld+json"
+        // JSON.stringify drops the undefined fields above.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(newsArticleJsonLd(article)),
+        }}
+      />
+
       <Link href="/" className="text-sm text-ink-soft hover:text-accent">
         ← Back to all stories
       </Link>
@@ -46,6 +157,12 @@ export default async function ArticlePage({
         <h1 className="mt-2 font-serif text-4xl leading-[1.15] font-semibold tracking-tight md:text-5xl">
           {article.headline}
         </h1>
+
+        {article.excerpt ? (
+          <p className="mt-4 text-lg leading-relaxed text-ink-soft">
+            {article.excerpt}
+          </p>
+        ) : null}
 
         <p className="mt-4 text-sm text-ink-soft">
           {article.byline ? <span>By {article.byline}</span> : null}
