@@ -71,3 +71,100 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+
+/* ---------------------------------------------------------------------------
+ * Motion
+ *
+ * Editorial restraint: everything is 150-250ms on an ease-out curve. No
+ * bounce, no elastic, no scroll-jacking. Motion signals affordance and
+ * continuity; it never gates content.
+ * ------------------------------------------------------------------------ */
+:root {
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  /* Standard decelerating ease-out. */
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/*
+ * Content fade-in. Deliberately NOT `opacity: 0` in the base rule — the
+ * element is visible by default and the keyframe only dips it for one frame.
+ * If the animation never runs, the content is still on screen.
+ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fade-in {
+  animation: fade-in var(--motion-base) var(--motion-ease);
+}
+
+/* Bordered "caged" clusters: border warms toward gold and lifts slightly. */
+.caged {
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+}
+
+.caged:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
+  box-shadow: 0 2px 16px rgb(0 0 0 / 0.1);
+}
+
+/* Skeleton blocks for loading.tsx, tinted to the ash palette. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton {
+  background-color: var(--surface);
+  border-radius: 2px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+/*
+ * Card image hover zoom. The image scales inside an overflow-hidden frame, so
+ * the crop stays put and only the picture grows. Triggered from the enclosing
+ * card (Tailwind's `group`) so hovering anywhere on the card responds, not just
+ * the image itself.
+ *
+ * The sliding nav underline used to live here too; Motion's `layoutId` in
+ * CategoryNav replaced it, so that class is gone rather than left dead.
+ */
+.hover-zoom {
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+
+.group:hover .hover-zoom {
+  transform: scale(1.03);
+}
+
+/*
+ * Reduced motion is non-negotiable and applied globally, so it also covers
+ * Tailwind's own transition utilities rather than only the classes above.
+ * Near-zero durations rather than `none`, so animationend/transitionend
+ * listeners still fire and nothing depends on an event that never arrives.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

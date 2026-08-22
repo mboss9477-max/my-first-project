@@ -88,7 +88,10 @@ export async function SiteHeader() {
             <span className="font-semibold">Trending</span>
           </span>
           {TRENDING_TOPICS.map((topic) => (
-            <span key={topic} className="cursor-default text-ink-soft">
+            <span
+              key={topic}
+              className="cursor-default text-ink-soft transition-colors duration-150 ease-out hover:text-accent"
+            >
               {topic}
             </span>
           ))}

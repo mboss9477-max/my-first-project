@@ -1,75 +1,38 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Category } from "@/sanity/queries";
 
-type Indicator = { left: number; width: number };
-
 /**
- * Section nav with a gold underline that slides between items as you navigate.
+ * Section nav with a gold underline that slides between sections.
  *
- * The underline is a single absolutely-positioned bar measured against the
- * active link, rather than a border on each item, so moving between sections
- * animates as one continuous movement rather than two separate fades.
+ * `layoutId` gives every active-item underline the same identity, so when the
+ * route changes Motion animates the single bar from the old item's box to the
+ * new one instead of cross-fading two separate borders.
  */
 export function CategoryNav({ categories }: { categories: Category[] }) {
   const pathname = usePathname();
-  const listRef = useRef<HTMLUListElement>(null);
-  const [indicator, setIndicator] = useState<Indicator | null>(null);
-  const [animate, setAnimate] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const activeSlug = pathname?.startsWith("/category/")
     ? pathname.split("/")[2]
     : null;
 
-  const measure = useCallback(() => {
-    const list = listRef.current;
-    if (!list) return;
-
-    const active = list.querySelector<HTMLElement>('[data-active="true"]');
-    if (!active) {
-      setIndicator(null);
-      return;
-    }
-
-    setIndicator({ left: active.offsetLeft, width: active.offsetWidth });
-  }, []);
-
-  useEffect(() => {
-    measure();
-  }, [measure, pathname, categories.length]);
-
-  // Enable the transition only after the first measurement, so the bar does not
-  // visibly slide in from x=0 on initial paint.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setAnimate(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [measure]);
-
   if (categories.length === 0) return null;
 
   return (
     <nav aria-label="Sections" className="mt-3">
-      <ul
-        ref={listRef}
-        className="relative mx-auto flex max-w-6xl justify-center gap-6 overflow-x-auto px-6"
-      >
+      <ul className="mx-auto flex max-w-6xl justify-center gap-6 overflow-x-auto px-6">
         {categories.map((category) => {
           const isActive = category.slug === activeSlug;
 
           return (
-            <li key={category._id} className="shrink-0">
+            <li key={category._id} className="relative shrink-0">
               <Link
                 href={`/category/${category.slug}`}
-                data-active={isActive}
                 aria-current={isActive ? "page" : undefined}
                 className={`block pb-2.5 text-sm transition-colors duration-150 ease-out ${
                   isActive
@@ -79,22 +42,23 @@ export function CategoryNav({ categories }: { categories: Category[] }) {
               >
                 {category.name}
               </Link>
+
+              {isActive ? (
+                <motion.span
+                  layoutId="nav-underline"
+                  aria-hidden="true"
+                  className="absolute inset-x-0 bottom-0 h-0.5 bg-accent"
+                  // Reduced motion: snap straight to the new position.
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : { duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }
+                  }
+                />
+              ) : null}
             </li>
           );
         })}
-
-        {indicator ? (
-          <span
-            aria-hidden="true"
-            className={`absolute bottom-0 h-0.5 bg-accent ${
-              animate ? "nav-underline--animate" : ""
-            }`}
-            style={{
-              transform: `translateX(${indicator.left}px)`,
-              width: `${indicator.width}px`,
-            }}
-          />
-        ) : null}
       </ul>
     </nav>
   );

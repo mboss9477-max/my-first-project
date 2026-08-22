@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
 import { PLACEHOLDER_ARTICLES } from "@/lib/placeholder-articles";
 import { client } from "@/sanity/client";
@@ -43,40 +44,33 @@ function CardImage({
   sizes: string;
 }) {
   const hero = article.heroImage;
+  const src = hero
+    ? urlForImage(hero).width(1200).height(800).fit("crop").url()
+    : // Decorative stock photo standing in for unpublished content, so alt="".
+      article.placeholderImage;
 
-  if (hero) {
+  if (!src) {
     return (
-      <Image
-        src={urlForImage(hero).width(1200).height(800).fit("crop").url()}
-        alt={hero.alt ?? ""}
-        width={1200}
-        height={800}
-        sizes={sizes}
-        className={`${ratio} h-full w-full object-cover`}
-      />
-    );
-  }
-
-  if (article.placeholderImage) {
-    return (
-      // Decorative stock photo standing in for unpublished content, so alt="".
-      <Image
-        src={article.placeholderImage}
-        alt=""
-        width={1200}
-        height={800}
-        sizes={sizes}
-        className={`${ratio} h-full w-full object-cover`}
-      />
+      <div
+        aria-hidden="true"
+        className={`${ratio} grid h-full w-full place-items-center bg-surface`}
+      >
+        <span className="size-2 rotate-45 border border-accent opacity-50" />
+      </div>
     );
   }
 
   return (
-    <div
-      aria-hidden="true"
-      className={`${ratio} grid h-full w-full place-items-center bg-surface`}
-    >
-      <span className="size-2 rotate-45 border border-accent opacity-50" />
+    // overflow-hidden crops the hover zoom so the image grows within its frame.
+    <div className={`${ratio} overflow-hidden`}>
+      <Image
+        src={src}
+        alt={hero?.alt ?? ""}
+        width={1200}
+        height={800}
+        sizes={sizes}
+        className="hover-zoom h-full w-full object-cover"
+      />
     </div>
   );
 }
@@ -100,7 +94,7 @@ function LeadCell({
   subLinks: CardArticle[];
 }) {
   return (
-    <article className="grid sm:grid-cols-[minmax(0,44%)_1fr]">
+    <article className="group grid sm:grid-cols-[minmax(0,44%)_1fr]">
       <CardImage
         article={lead}
         ratio="aspect-[4/3] sm:aspect-auto sm:min-h-full"
@@ -224,7 +218,7 @@ function SidebarCell({ articles }: { articles: CardArticle[] }) {
 /** Large image cell for the second row. */
 function FeatureCell({ article }: { article: CardArticle }) {
   return (
-    <article className="flex flex-col">
+    <article className="group flex flex-col">
       <CardImage
         article={article}
         ratio="aspect-[16/9]"
@@ -262,7 +256,7 @@ function BriefingCell({ articles }: { articles: CardArticle[] }) {
           const date = formatDate(article.publishedAt);
 
           return (
-            <li key={article._id} className="flex gap-4 py-4 first:pt-0">
+            <li key={article._id} className="group flex gap-4 py-4 first:pt-0">
               <div className="w-24 shrink-0">
                 <CardImage article={article} ratio="aspect-[4/3]" sizes="96px" />
               </div>
@@ -312,7 +306,7 @@ export default async function HomePage() {
   const briefing = articles.slice(9, 12);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-6">
+    <main className="fade-in mx-auto max-w-6xl px-6 py-6">
       {usingPlaceholders ? (
         <p className="mb-6 border border-rule bg-surface px-4 py-3 text-xs text-ink-soft">
           <span className="label text-accent">Placeholder content</span> — no
@@ -328,7 +322,7 @@ export default async function HomePage() {
       */}
       {lead ? (
         <div className="grid lg:grid-cols-[1fr_20rem]">
-          <div className="border border-rule">
+          <div className="caged border border-rule">
             <LeadCell lead={lead} subLinks={leadSubs} />
             {strip ? (
               <div className="border-t border-rule">
@@ -338,26 +332,27 @@ export default async function HomePage() {
           </div>
 
           {sidebar.length > 0 ? (
-            <aside className="-mt-px border border-rule lg:mt-0 lg:-ml-px">
+            <aside className="caged -mt-px border border-rule lg:mt-0 lg:-ml-px">
               <SidebarCell articles={sidebar} />
             </aside>
           ) : null}
         </div>
       ) : null}
 
+      {/* Below the fold, so this row reveals on scroll rather than on load. */}
       {feature || briefing.length > 0 ? (
-        <div className="-mt-px grid lg:grid-cols-[1.1fr_1fr]">
+        <Reveal className="-mt-px grid lg:grid-cols-[1.1fr_1fr]">
           {feature ? (
-            <div className="border border-rule">
+            <div className="caged border border-rule">
               <FeatureCell article={feature} />
             </div>
           ) : null}
           {briefing.length > 0 ? (
-            <div className="-mt-px border border-rule lg:mt-0 lg:-ml-px">
+            <div className="caged -mt-px border border-rule lg:mt-0 lg:-ml-px">
               <BriefingCell articles={briefing} />
             </div>
           ) : null}
-        </div>
+        </Reveal>
       ) : null}
     </main>
   );

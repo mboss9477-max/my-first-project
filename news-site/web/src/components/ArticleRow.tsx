@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
 import { urlForImage } from "@/sanity/image";
 import type { ArticleListItem } from "@/sanity/queries";
@@ -16,7 +17,10 @@ export function ArticleRow({ article }: { article: RowArticle }) {
     : article.placeholderImage;
 
   return (
-    <li className="flex gap-5 py-5">
+    // The reveal wraps the row's contents rather than replacing the <li>, so
+    // the list keeps proper ul/li semantics.
+    <li className="group">
+      <Reveal className="flex gap-5 py-5">
       {thumb ? (
         <div className="w-28 shrink-0 overflow-hidden rounded-sm">
           <Image
@@ -57,7 +61,8 @@ export function ArticleRow({ article }: { article: RowArticle }) {
             <time dateTime={article.publishedAt ?? undefined}>{date}</time>
           ) : null}
         </p>
-      </div>
+        </div>
+      </Reveal>
     </li>
   );
 }

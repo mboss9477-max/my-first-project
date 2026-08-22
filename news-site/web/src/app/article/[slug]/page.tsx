@@ -173,7 +173,7 @@ export default async function ArticlePage({
         </p>
 
         {hero && heroSize ? (
-          <figure className="mt-8">
+          <figure className="fade-in mt-8">
             <Image
               src={urlForImage(hero).width(heroSize.width).url()}
               alt={hero.alt ?? ""}
@@ -193,7 +193,7 @@ export default async function ArticlePage({
           </figure>
         ) : null}
 
-        <div className="mt-8 text-lg">
+        <div className="fade-in mt-8 text-lg">
           {article.body?.length ? (
             <ArticleBody value={article.body} />
           ) : (
