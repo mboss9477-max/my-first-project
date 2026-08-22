@@ -60,6 +60,35 @@ export const article = defineType({
       title: 'Category',
       type: 'reference',
       to: [{type: 'category'}],
+      /**
+       * Sanity lets you publish an article that references a document which is
+       * still a draft. The reference then dangles: the Studio resolves it (the
+       * Studio can read drafts) while the public API cannot, so the category
+       * silently disappears from the live site.
+       *
+       * A draft lives at `drafts.<id>`, so querying the bare id matches only a
+       * published document. Raised as a warning rather than an error so it does
+       * not block publishing — it just makes the consequence visible first.
+       */
+      validation: (rule) =>
+        rule
+          .custom(async (value, context) => {
+            const ref = (value as {_ref?: string} | undefined)?._ref
+            if (!ref) return true
+
+            const publishedId = ref.replace(/^drafts\./, '')
+            const client = context.getClient({apiVersion: '2024-10-01'})
+
+            const isPublished = await client.fetch<boolean>(
+              'defined(*[_id == $id][0]._id)',
+              {id: publishedId},
+            )
+
+            return isPublished
+              ? true
+              : 'This category has not been published yet. Publish the category document too, or it will not appear on the live site.'
+          })
+          .warning(),
     }),
     defineField({
       name: 'heroImage',
