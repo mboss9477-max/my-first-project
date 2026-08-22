@@ -130,6 +130,7 @@ export const PLACEHOLDER_ARTICLES: PlaceholderArticle[] = DRAFTS.map(
   (draft) => ({
     ...draft,
     _id: `placeholder-${draft.slug}`,
+    categorySlug: draft.category.toLowerCase(),
     heroImage: null,
     placeholderImage: `https://picsum.photos/seed/${draft.slug}/1200/800`,
   }),

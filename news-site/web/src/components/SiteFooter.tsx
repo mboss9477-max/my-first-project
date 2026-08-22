@@ -10,26 +10,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { SITE_NAME } from "@/lib/site";
+import Link from "next/link";
 
-const TEXT_COLUMNS = [
-  {
-    title: "Latest",
-    items: ["Home", "Authors", "Topic sitemap", "Archive", "Corrections"],
-  },
-  {
-    title: "Browse",
-    items: [
-      "World",
-      "Politics",
-      "Tech",
-      "Business",
-      "Culture",
-      "Sport",
-      "Investigations",
-    ],
-  },
-];
+import { SITE_NAME } from "@/lib/site";
+import { client } from "@/sanity/client";
+import { ALL_CATEGORIES_QUERY, type Category } from "@/sanity/queries";
+
+/** No destinations yet, so these stay as plain text. */
+const LATEST_ITEMS = ["Authors", "Topic sitemap", "Archive", "Corrections"];
 
 const MEDIA_ITEMS: { label: string; Icon: LucideIcon }[] = [
   { label: "Videos", Icon: Video },
@@ -72,22 +60,47 @@ function PlainItem({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const categories = await client.fetch<Category[]>(ALL_CATEGORIES_QUERY);
+
   return (
     <footer className="mt-16">
       <div className="mx-auto max-w-6xl px-6 py-12">
         {/* Four columns of plain text links — no dividers between them. */}
         <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4">
-          {TEXT_COLUMNS.map((column) => (
-            <div key={column.title}>
-              <ColumnHeading>{column.title}</ColumnHeading>
-              <ul className="mt-4 flex flex-col gap-3">
-                {column.items.map((item) => (
-                  <PlainItem key={item}>{item}</PlainItem>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div>
+            <ColumnHeading>Latest</ColumnHeading>
+            <ul className="mt-4 flex flex-col gap-3">
+              <li>
+                <Link
+                  href="/"
+                  className="text-sm font-medium text-ink transition-colors duration-150 ease-out hover:text-accent"
+                >
+                  Home
+                </Link>
+              </li>
+              {LATEST_ITEMS.map((item) => (
+                <PlainItem key={item}>{item}</PlainItem>
+              ))}
+            </ul>
+          </div>
+
+          {/* Browse — real destinations now that category pages exist. */}
+          <div>
+            <ColumnHeading>Browse</ColumnHeading>
+            <ul className="mt-4 flex flex-col gap-3">
+              {categories.map((category) => (
+                <li key={category._id}>
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="text-sm font-medium text-ink transition-colors duration-150 ease-out hover:text-accent"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <div>
             <ColumnHeading>Media</ColumnHeading>

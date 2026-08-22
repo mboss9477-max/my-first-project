@@ -19,7 +19,18 @@ export type ArticleListItem = {
   publishedAt: string | null;
   /** Dereferenced from the `category` document so consumers still see a name. */
   category: string | null;
+  categorySlug: string | null;
   heroImage: HeroImage | null;
+};
+
+export type Category = {
+  _id: string;
+  name: string;
+  slug: string;
+};
+
+export type CategoryWithArticles = Category & {
+  articles: ArticleListItem[];
 };
 
 export type Article = ArticleListItem & {
@@ -35,10 +46,8 @@ const HERO_IMAGE = `heroImage{
     "dimensions": asset->metadata.dimensions{width, height}
   }`;
 
-/** All articles, newest first. Drafts and slug-less docs are excluded. */
-export const ARTICLES_QUERY = `*[
-  _type == "article" && defined(slug.current)
-] | order(publishedAt desc) {
+/** Shared card projection, so every list of articles has the same shape. */
+const ARTICLE_CARD_FIELDS = `
   _id,
   headline,
   "slug": slug.current,
@@ -46,7 +55,40 @@ export const ARTICLES_QUERY = `*[
   byline,
   publishedAt,
   "category": category->name,
-  ${HERO_IMAGE}
+  "categorySlug": category->slug.current,
+  ${HERO_IMAGE}`;
+
+/** All articles, newest first. Drafts and slug-less docs are excluded. */
+export const ARTICLES_QUERY = `*[
+  _type == "article" && defined(slug.current)
+] | order(publishedAt desc) {${ARTICLE_CARD_FIELDS}
+}`;
+
+/** Every category, for the header nav and footer browse column. */
+export const ALL_CATEGORIES_QUERY = `*[
+  _type == "category" && defined(slug.current)
+] | order(name asc) {
+  _id,
+  name,
+  "slug": slug.current
+}`;
+
+/** Category slugs, for prerendering the category routes. */
+export const CATEGORY_SLUGS_QUERY = `*[
+  _type == "category" && defined(slug.current)
+].slug.current`;
+
+/** One category plus its articles, newest first. */
+export const CATEGORY_QUERY = `*[
+  _type == "category" && slug.current == $slug
+][0]{
+  _id,
+  name,
+  "slug": slug.current,
+  "articles": *[
+    _type == "article" && defined(slug.current) && category._ref == ^._id
+  ] | order(publishedAt desc) {${ARTICLE_CARD_FIELDS}
+  }
 }`;
 
 /** Slugs only — used by generateStaticParams to prerender article routes. */
@@ -65,15 +107,7 @@ export const SITEMAP_QUERY = `*[
 /** A single article by its slug. */
 export const ARTICLE_QUERY = `*[
   _type == "article" && slug.current == $slug
-][0] {
-  _id,
-  headline,
-  "slug": slug.current,
-  excerpt,
-  byline,
-  publishedAt,
-  "category": category->name,
-  ${HERO_IMAGE},
+][0] {${ARTICLE_CARD_FIELDS},
   body[]{
     ...,
     _type == "image" => {

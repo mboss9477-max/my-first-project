@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 
-import {
-  ACTIVE_CATEGORY,
-  NAV_CATEGORIES,
-  SITE_MONOGRAM,
-  SITE_NAME,
-} from "@/lib/site";
+import { CategoryNav } from "@/components/CategoryNav";
+import { SITE_MONOGRAM, SITE_NAME } from "@/lib/site";
+import { client } from "@/sanity/client";
+import { ALL_CATEGORIES_QUERY, type Category } from "@/sanity/queries";
 
+/**
+ * Still inert: these are topic phrases, not categories, and there is no tag
+ * field or search route to point them at yet. Rendered as text rather than
+ * dead anchors, same rule as the social buttons.
+ */
 const TRENDING_TOPICS = ["Tidal cities", "Four-day week", "Open silicon"];
 
 /** e.g. "Monday August 17 2026" — built explicitly to keep month-before-day. */
@@ -30,7 +33,9 @@ function SiteMark() {
   );
 }
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const categories = await client.fetch<Category[]>(ALL_CATEGORIES_QUERY);
+
   return (
     <header>
       {/* TIER 1 — slim utility bar, always dark ash. */}
@@ -41,6 +46,7 @@ export function SiteHeader() {
           </Link>
 
           <div className="ml-auto flex items-center gap-5">
+            {/* No destination yet — kept as text, not dead links. */}
             <span
               aria-label="Language: English (switching not yet available)"
               className="label cursor-default"
@@ -71,37 +77,7 @@ export function SiteHeader() {
           </Link>
         </div>
 
-        {/* TIER 3 — nav, centred, active section underlined in gold. */}
-        <nav aria-label="Sections" className="mt-3">
-          <ul className="mx-auto flex max-w-6xl justify-center gap-6 overflow-x-auto px-6">
-            {NAV_CATEGORIES.map((category) => {
-              const isActive = category === ACTIVE_CATEGORY;
-
-              return (
-                <li key={category} className="shrink-0">
-                  {/*
-                    Not a link yet, so `aria-current="page"` would be misleading:
-                    it describes the current item in a set of navigable links.
-                    Visually-hidden text conveys the same thing honestly until
-                    section routing exists.
-                  */}
-                  <span
-                    className={`block cursor-default border-b-2 pb-2.5 text-sm transition-colors ${
-                      isActive
-                        ? "border-accent font-semibold"
-                        : "border-transparent text-masthead-soft hover:text-masthead-ink"
-                    }`}
-                  >
-                    {category}
-                    {isActive ? (
-                      <span className="sr-only"> (current section)</span>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+        <CategoryNav categories={categories} />
       </div>
 
       {/* Trending strip — back on the ash/dark page ground. Text only. */}
@@ -112,10 +88,7 @@ export function SiteHeader() {
             <span className="font-semibold">Trending</span>
           </span>
           {TRENDING_TOPICS.map((topic) => (
-            <span
-              key={topic}
-              className="cursor-default text-ink-soft transition-colors hover:text-accent"
-            >
+            <span key={topic} className="cursor-default text-ink-soft">
               {topic}
             </span>
           ))}
