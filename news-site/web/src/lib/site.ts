@@ -11,12 +11,13 @@ export const SITE_TAGLINE = "Independent reporting from around the world.";
  * Absolute origin, used for canonical URLs, Open Graph URLs, the sitemap and
  * robots.txt.
  *
- * MUST be set to the real domain before deploying — otherwise canonical tags
- * and the sitemap will publish localhost URLs, which search engines will either
- * ignore or index wrongly. Set NEXT_PUBLIC_SITE_URL in the hosting environment.
+ * Defaults to the production domain deliberately: canonical tags should point
+ * at the real site from every environment, and a wrong-but-real domain is far
+ * safer to publish than localhost. Override with NEXT_PUBLIC_SITE_URL only for
+ * preview deployments that need to self-reference.
  */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://csnews.news";
 
 export const NAV_CATEGORIES = ["World", "Politics", "Tech", "Business"];
 
