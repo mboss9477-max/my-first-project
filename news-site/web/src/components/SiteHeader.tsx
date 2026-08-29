@@ -2,8 +2,9 @@ import { Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 import { CategoryNav } from "@/components/CategoryNav";
+import { SiteMenu } from "@/components/SiteMenu";
 import { TextSizeControl } from "@/components/TextSizeControl";
-import { SITE_MONOGRAM, SITE_NAME } from "@/lib/site";
+import { SITE_NAME } from "@/lib/site";
 import { client } from "@/sanity/client";
 import {
   ALL_CATEGORIES_QUERY,
@@ -20,18 +21,6 @@ function mastheadDate() {
   return `${weekday} ${month} ${now.getDate()} ${now.getFullYear()}`;
 }
 
-/** Small monogram mark used in the utility bar. */
-function SiteMark() {
-  return (
-    <span
-      aria-hidden="true"
-      className="grid h-6 place-items-center border border-accent px-1.5 text-[0.6rem] font-semibold tracking-tight text-accent"
-    >
-      {SITE_MONOGRAM}
-    </span>
-  );
-}
-
 export async function SiteHeader() {
   const [categories, trending] = await Promise.all([
     client.fetch<Category[]>(ALL_CATEGORIES_QUERY),
@@ -43,9 +32,7 @@ export async function SiteHeader() {
       {/* TIER 1 — slim utility bar, always dark ash. */}
       <div className="bg-utility-bg text-utility-ink">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3.5">
-          <Link href="/" aria-label={`${SITE_NAME} home`}>
-            <SiteMark />
-          </Link>
+          <SiteMenu />
 
           <div className="ml-auto flex items-center gap-5">
             <TextSizeControl />

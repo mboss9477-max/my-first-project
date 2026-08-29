@@ -12,7 +12,6 @@ import {
 import Link from "next/link";
 
 import { NewsletterSignup } from "@/components/NewsletterSignup";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { SITE_NAME } from "@/lib/site";
 import { client } from "@/sanity/client";
 import { ALL_CATEGORIES_QUERY, type Category } from "@/sanity/queries";
@@ -193,12 +192,9 @@ export async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-xs text-ink-soft">
-            © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
-          </p>
-          <ThemeToggle />
-        </div>
+        <p className="mt-10 text-xs text-ink-soft">
+          © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
+        </p>
       </div>
     </footer>
   );
