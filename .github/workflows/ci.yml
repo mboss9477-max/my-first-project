@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push supersedes an in-flight run on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Typecheck and build (web)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: news-site/web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Must satisfy the `engines` field in news-site/web/package.json,
+          # which requires Node 20 or newer for Next.js 16.
+          node-version: 22
+          cache: npm
+          cache-dependency-path: news-site/web/package-lock.json
+
+      - name: Install dependencies
+        # `ci` rather than `install`: installs exactly the lockfile, so CI
+        # cannot pass against a different dependency tree than the one committed.
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        # Prerenders every route, so this also catches runtime errors in server
+        # components and broken GROQ queries — not just type errors.
+        # Reaches the public Sanity API and Google Fonts during the build.
+        run: npm run build
