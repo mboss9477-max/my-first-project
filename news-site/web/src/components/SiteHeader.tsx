@@ -1,17 +1,15 @@
+import { Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { TrendingUp } from "lucide-react";
 
 import { CategoryNav } from "@/components/CategoryNav";
 import { SITE_MONOGRAM, SITE_NAME } from "@/lib/site";
 import { client } from "@/sanity/client";
-import { ALL_CATEGORIES_QUERY, type Category } from "@/sanity/queries";
-
-/**
- * Still inert: these are topic phrases, not categories, and there is no tag
- * field or search route to point them at yet. Rendered as text rather than
- * dead anchors, same rule as the social buttons.
- */
-const TRENDING_TOPICS = ["Tidal cities", "Four-day week", "Open silicon"];
+import {
+  ALL_CATEGORIES_QUERY,
+  TRENDING_TOPICS_QUERY,
+  type Category,
+  type Topic,
+} from "@/sanity/queries";
 
 /** e.g. "Monday August 17 2026" — built explicitly to keep month-before-day. */
 function mastheadDate() {
@@ -34,7 +32,10 @@ function SiteMark() {
 }
 
 export async function SiteHeader() {
-  const categories = await client.fetch<Category[]>(ALL_CATEGORIES_QUERY);
+  const [categories, trending] = await Promise.all([
+    client.fetch<Category[]>(ALL_CATEGORIES_QUERY),
+    client.fetch<Topic[]>(TRENDING_TOPICS_QUERY),
+  ]);
 
   return (
     <header>
@@ -46,6 +47,14 @@ export async function SiteHeader() {
           </Link>
 
           <div className="ml-auto flex items-center gap-5">
+            <Link
+              href="/search"
+              aria-label="Search stories"
+              className="flex items-center gap-1.5 text-xs transition-colors duration-150 ease-out hover:text-accent"
+            >
+              <Search aria-hidden="true" className="size-3.5" />
+              Search
+            </Link>
             {/* No destination yet — kept as text, not dead links. */}
             <span
               aria-label="Language: English (switching not yet available)"
@@ -80,23 +89,26 @@ export async function SiteHeader() {
         <CategoryNav categories={categories} />
       </div>
 
-      {/* Trending strip — back on the ash/dark page ground. Text only. */}
-      <div className="border-b border-rule">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-6 py-3 text-sm">
-          <span className="flex items-center gap-2">
-            <TrendingUp aria-hidden="true" className="size-4 text-accent" />
-            <span className="font-semibold">Trending</span>
-          </span>
-          {TRENDING_TOPICS.map((topic) => (
-            <span
-              key={topic}
-              className="cursor-default text-ink-soft transition-colors duration-150 ease-out hover:text-accent"
-            >
-              {topic}
+      {/* Trending strip — real topic links now, driven by the Studio flag. */}
+      {trending.length > 0 ? (
+        <div className="border-b border-rule">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-6 py-3 text-sm">
+            <span className="flex items-center gap-2">
+              <TrendingUp aria-hidden="true" className="size-4 text-accent" />
+              <span className="font-semibold">Trending</span>
             </span>
-          ))}
+            {trending.map((topic) => (
+              <Link
+                key={topic._id}
+                href={`/topic/${topic.slug}`}
+                className="text-ink-soft transition-colors duration-150 ease-out hover:text-accent"
+              >
+                {topic.name}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </header>
   );
 }

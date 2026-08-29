@@ -8,8 +8,19 @@ import type { ArticleListItem } from "@/sanity/queries";
 
 type RowArticle = ArticleListItem & { placeholderImage?: string };
 
-/** One article in a vertical list: thumbnail, category, headline, date. */
-export function ArticleRow({ article }: { article: RowArticle }) {
+/**
+ * One article in a vertical list: thumbnail, category, headline, date.
+ *
+ * `index` staggers the scroll reveal down the list. Capped so a long list does
+ * not end up with a visible wait on the last row.
+ */
+export function ArticleRow({
+  article,
+  index = 0,
+}: {
+  article: RowArticle;
+  index?: number;
+}) {
   const date = formatDate(article.publishedAt);
 
   const thumb = article.heroImage
@@ -20,7 +31,7 @@ export function ArticleRow({ article }: { article: RowArticle }) {
     // The reveal wraps the row's contents rather than replacing the <li>, so
     // the list keeps proper ul/li semantics.
     <li className="group">
-      <Reveal className="flex gap-5 py-5">
+      <Reveal className="flex gap-5 py-5" delay={Math.min(index, 5) * 0.05}>
       {thumb ? (
         <div className="w-28 shrink-0 overflow-hidden rounded-sm">
           <Image
@@ -29,6 +40,8 @@ export function ArticleRow({ article }: { article: RowArticle }) {
             width={320}
             height={240}
             sizes="112px"
+            placeholder={article.heroImage?.lqip ? "blur" : undefined}
+            blurDataURL={article.heroImage?.lqip ?? undefined}
             className="hover-zoom aspect-[4/3] h-full w-full object-cover"
           />
         </div>

@@ -69,6 +69,10 @@ function CardImage({
         width={1200}
         height={800}
         sizes={sizes}
+        // Sanity ships a tiny base64 preview in the asset metadata, so images
+        // blur up from a colour smear instead of popping in from nothing.
+        placeholder={hero?.lqip ? "blur" : undefined}
+        blurDataURL={hero?.lqip ?? undefined}
         className="hover-zoom h-full w-full object-cover"
       />
     </div>
@@ -289,7 +293,11 @@ function BriefingCell({ articles }: { articles: CardArticle[] }) {
 }
 
 export default async function HomePage() {
-  const published = await client.fetch<ArticleListItem[]>(ARTICLES_QUERY);
+  // Bounded: the front page only ever renders a fixed number of slots, so the
+  // query no longer pulls every article in the dataset.
+  const published = await client.fetch<ArticleListItem[]>(ARTICLES_QUERY, {
+    limit: 12,
+  });
 
   // Fall back to placeholder content only while the dataset is empty, so the
   // layout is reviewable before anything is published.

@@ -4,7 +4,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleBody } from "@/components/ArticleBody";
+import { Breadcrumbs, type Crumb } from "@/components/Breadcrumbs";
+import { RelatedArticles } from "@/components/RelatedArticles";
+import { ShareLinks } from "@/components/ShareLinks";
 import { formatDate } from "@/lib/format";
+import { readingTime } from "@/lib/reading-time";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { client } from "@/sanity/client";
 import { displayDimensions, urlForImage } from "@/sanity/image";
@@ -16,14 +20,13 @@ import {
 
 export const revalidate = 60;
 
-/** Prerender every known article; unknown slugs still render on demand. */
 export async function generateStaticParams() {
   const slugs = await client.fetch<string[]>(ARTICLE_SLUGS_QUERY);
   return slugs.map((slug) => ({ slug }));
 }
 
 function getArticle(slug: string) {
-  // Called by both generateMetadata and the page; Next dedupes the request.
+  // Called by generateMetadata, the OG image and the page; Next dedupes it.
   return client.fetch<Article | null>(ARTICLE_QUERY, { slug });
 }
 
@@ -65,8 +68,11 @@ export async function generateMetadata({
       siteName: SITE_NAME,
       locale: "en_GB",
       publishedTime: article.publishedAt ?? undefined,
+      modifiedTime: article.updatedAt ?? undefined,
       authors: article.byline ? [article.byline] : undefined,
       section: article.category ?? undefined,
+      tags: article.topics?.map((topic) => topic.name),
+      // When there is no hero, opengraph-image.tsx generates a card instead.
       images: image
         ? [
             {
@@ -97,14 +103,25 @@ function newsArticleJsonLd(article: Article) {
     headline: article.headline,
     description: article.excerpt ?? undefined,
     datePublished: article.publishedAt ?? undefined,
+    dateModified: article.updatedAt ?? article.publishedAt ?? undefined,
     articleSection: article.category ?? undefined,
+    keywords: article.topics?.map((topic) => topic.name).join(", ") || undefined,
     image: image ? [image] : undefined,
     author: article.byline
-      ? [{ "@type": "Person", name: article.byline }]
+      ? [
+          {
+            "@type": "Person",
+            name: article.byline,
+            url: article.authorSlug
+              ? `${SITE_URL}/author/${article.authorSlug}`
+              : undefined,
+          },
+        ]
       : undefined,
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
+      url: SITE_URL,
     },
     mainEntityOfPage: {
       "@type": "WebPage",
@@ -126,7 +143,9 @@ export default async function ArticlePage({
     notFound();
   }
 
-  const date = formatDate(article.publishedAt);
+  const published = formatDate(article.publishedAt);
+  const updated = formatDate(article.updatedAt);
+  const minutes = readingTime(article.body);
 
   const hero = article.heroImage;
   // Sanity stores asset dimensions on upload; the fallback only guards against
@@ -134,6 +153,15 @@ export default async function ArticlePage({
   const heroSize = hero
     ? (displayDimensions(hero, 1600) ?? { width: 1600, height: 900 })
     : null;
+
+  const trail: Crumb[] = [];
+  if (article.category && article.categorySlug) {
+    trail.push({
+      name: article.category,
+      href: `/category/${article.categorySlug}`,
+    });
+  }
+  trail.push({ name: article.headline, href: `/article/${article.slug}` });
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -145,13 +173,16 @@ export default async function ArticlePage({
         }}
       />
 
-      <Link href="/" className="text-sm text-ink-soft hover:text-accent">
-        ← Back to all stories
-      </Link>
+      <Breadcrumbs trail={trail} />
 
       <article className="mt-8">
-        {article.category ? (
-          <span className="label text-accent">{article.category}</span>
+        {article.category && article.categorySlug ? (
+          <Link
+            href={`/category/${article.categorySlug}`}
+            className="label text-accent transition-colors duration-150 ease-out hover:underline"
+          >
+            {article.category}
+          </Link>
         ) : null}
 
         <h1 className="mt-2 font-serif text-4xl leading-[1.15] font-semibold tracking-tight md:text-5xl">
@@ -164,13 +195,39 @@ export default async function ArticlePage({
           </p>
         ) : null}
 
-        <p className="mt-4 text-sm text-ink-soft">
-          {article.byline ? <span>By {article.byline}</span> : null}
-          {article.byline && date ? <span> · </span> : null}
-          {date ? (
-            <time dateTime={article.publishedAt ?? undefined}>{date}</time>
+        <div className="mt-4 text-sm text-ink-soft">
+          <p>
+            {article.byline ? (
+              <span>
+                By{" "}
+                {article.authorSlug ? (
+                  <Link
+                    href={`/author/${article.authorSlug}`}
+                    className="transition-colors duration-150 ease-out hover:text-accent"
+                  >
+                    {article.byline}
+                  </Link>
+                ) : (
+                  article.byline
+                )}
+              </span>
+            ) : null}
+            {article.byline && published ? <span> · </span> : null}
+            {published ? (
+              <time dateTime={article.publishedAt ?? undefined}>
+                {published}
+              </time>
+            ) : null}
+            {minutes ? <span> · {minutes} min read</span> : null}
+          </p>
+
+          {updated ? (
+            <p className="mt-1 text-xs">
+              Updated{" "}
+              <time dateTime={article.updatedAt ?? undefined}>{updated}</time>
+            </p>
           ) : null}
-        </p>
+        </div>
 
         {hero && heroSize ? (
           <figure className="fade-in mt-8">
@@ -181,10 +238,12 @@ export default async function ArticlePage({
               height={heroSize.height}
               priority
               sizes="(max-width: 672px) 100vw, 672px"
+              placeholder={hero.lqip ? "blur" : undefined}
+              blurDataURL={hero.lqip ?? undefined}
               className="h-auto w-full rounded"
             />
-            {/* A real caption field now — distinct from alt text, which
-                describes the image rather than captioning it. */}
+            {/* A real caption field — distinct from alt text, which describes
+                the image rather than captioning it. */}
             {hero.caption ? (
               <figcaption className="mt-2 text-sm text-ink-soft">
                 {hero.caption}
@@ -200,7 +259,46 @@ export default async function ArticlePage({
             <p className="text-ink-soft">This article has no body content yet.</p>
           )}
         </div>
+
+        {article.topics?.length ? (
+          <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-rule pt-6">
+            <span className="label text-ink-soft">Topics</span>
+            {article.topics.map((topic) => (
+              <Link
+                key={topic.slug}
+                href={`/topic/${topic.slug}`}
+                className="rounded-sm border border-rule px-2.5 py-1 text-xs transition-colors duration-150 ease-out hover:border-accent hover:text-accent"
+              >
+                {topic.name}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+
+        {article.corrections?.length ? (
+          <aside className="mt-8 border-l-4 border-accent bg-surface px-4 py-3">
+            <h2 className="label text-accent">Corrections</h2>
+            <ul className="mt-2 flex flex-col gap-2">
+              {article.corrections.map((correction) => (
+                <li key={correction.correctedAt} className="text-sm text-ink-soft">
+                  <time dateTime={correction.correctedAt}>
+                    {formatDate(correction.correctedAt)}
+                  </time>
+                  {" — "}
+                  {correction.note}
+                </li>
+              ))}
+            </ul>
+          </aside>
+        ) : null}
+
+        <ShareLinks headline={article.headline} slug={article.slug} />
       </article>
+
+      <RelatedArticles
+        articleId={article._id}
+        categorySlug={article.categorySlug}
+      />
     </main>
   );
 }

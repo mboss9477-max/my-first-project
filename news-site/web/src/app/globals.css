@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Meridian — original visual identity.
+ * CS NEWS — original visual identity.
  * Ash-toned grounds (warm greys) with an antique gold accent.
  */
 :root {
@@ -27,8 +27,14 @@
   --masthead-rule: #e3e0d7;
 }
 
+/*
+ * Dark palette. Applied when the OS asks for it *unless* the reader has
+ * explicitly chosen light, and always when they have explicitly chosen dark.
+ * Every token is defined in :root above, so no colour exists only inside a
+ * media query.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #161614;
     --surface: #1e1e1b;
     --ink: #edebe4;
@@ -36,6 +42,15 @@
     --accent: #d4af4f;
     --rule: #322f29;
   }
+}
+
+:root[data-theme="dark"] {
+  --paper: #161614;
+  --surface: #1e1e1b;
+  --ink: #edebe4;
+  --ink-soft: #a3a29a;
+  --accent: #d4af4f;
+  --rule: #322f29;
 }
 
 @theme inline {
@@ -73,11 +88,29 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+ * Focus
+ *
+ * Browser defaults are unreliable against custom ash/gold grounds, so focus is
+ * defined explicitly. `:focus-visible` rather than `:focus`, so a mouse click
+ * does not leave a ring behind but keyboard navigation always shows one.
+ * ------------------------------------------------------------------------ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+/* The masthead is a fixed light band, so the ring needs its own colour there. */
+.bg-masthead-bg :focus-visible {
+  outline-color: #8a6a16;
+}
+
+/* ---------------------------------------------------------------------------
  * Motion
  *
- * Editorial restraint: everything is 150-250ms on an ease-out curve. No
- * bounce, no elastic, no scroll-jacking. Motion signals affordance and
- * continuity; it never gates content.
+ * Editorial restraint: everything is 150-250ms on an ease-out curve (300ms for
+ * scroll entrances). No bounce, no elastic, no scroll-jacking. Motion signals
+ * affordance and continuity; it never gates content.
  * ------------------------------------------------------------------------ */
 :root {
   --motion-fast: 150ms;
@@ -118,6 +151,19 @@ body {
   box-shadow: 0 2px 16px rgb(0 0 0 / 0.1);
 }
 
+/*
+ * Card image hover zoom. The image scales inside an overflow-hidden frame, so
+ * the crop stays put and only the picture grows. Triggered from the enclosing
+ * card (Tailwind's `group`) so hovering anywhere on the card responds.
+ */
+.hover-zoom {
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+
+.group:hover .hover-zoom {
+  transform: scale(1.03);
+}
+
 /* Skeleton blocks for loading.tsx, tinted to the ash palette. */
 @keyframes skeleton-pulse {
   0%,
@@ -135,21 +181,9 @@ body {
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }
 
-/*
- * Card image hover zoom. The image scales inside an overflow-hidden frame, so
- * the crop stays put and only the picture grows. Triggered from the enclosing
- * card (Tailwind's `group`) so hovering anywhere on the card responds, not just
- * the image itself.
- *
- * The sliding nav underline used to live here too; Motion's `layoutId` in
- * CategoryNav replaced it, so that class is gone rather than left dead.
- */
-.hover-zoom {
-  transition: transform var(--motion-base) var(--motion-ease);
-}
-
-.group:hover .hover-zoom {
-  transform: scale(1.03);
+/* Softens the swap from skeleton to real content. */
+.skeleton-shell {
+  animation: fade-in var(--motion-fast) var(--motion-ease);
 }
 
 /*
@@ -166,5 +200,43 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    view-transition-name: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Print
+ *
+ * Readers do print news articles. Drop the site chrome and interactive
+ * furniture, keep the story, and expose link targets.
+ * ------------------------------------------------------------------------ */
+@media print {
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  figure,
+  blockquote,
+  li {
+    break-inside: avoid;
   }
 }
