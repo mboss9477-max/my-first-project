@@ -2,6 +2,7 @@ import { Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 import { CategoryNav } from "@/components/CategoryNav";
+import { TextSizeControl } from "@/components/TextSizeControl";
 import { SITE_MONOGRAM, SITE_NAME } from "@/lib/site";
 import { client } from "@/sanity/client";
 import {
@@ -47,6 +48,7 @@ export async function SiteHeader() {
           </Link>
 
           <div className="ml-auto flex items-center gap-5">
+            <TextSizeControl />
             <Link
               href="/search"
               aria-label="Search stories"

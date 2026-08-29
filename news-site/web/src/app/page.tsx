@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HeadlineCarousel } from "@/components/HeadlineCarousel";
 import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
 import { PLACEHOLDER_ARTICLES } from "@/lib/placeholder-articles";
@@ -111,7 +112,7 @@ function LeadCell({
         <h3 className="mt-2 font-serif text-2xl leading-[1.15] tracking-tight md:text-[2rem]">
           <Link
             href={`/article/${lead.slug}`}
-            className="transition-colors hover:text-accent"
+            className="transition-colors duration-150 ease-out hover:text-accent"
           >
             {lead.headline}
           </Link>
@@ -145,50 +146,6 @@ function LeadCell({
   );
 }
 
-/** Narrow strip beneath the lead, with inert carousel controls. */
-function StripCell({ article }: { article: CardArticle }) {
-  return (
-    <div className="flex items-center gap-4 px-6 py-4">
-      <h3 className="min-w-0 flex-1 font-serif text-base leading-snug tracking-tight">
-        <Link
-          href={`/article/${article.slug}`}
-          className="transition-colors hover:text-accent"
-        >
-          {article.headline}
-        </Link>
-      </h3>
-
-      <div className="flex shrink-0 gap-1.5">
-        {[
-          { label: "Previous story", d: "M15 6l-6 6 6 6" },
-          { label: "Next story", d: "M9 6l6 6-6 6" },
-        ].map((control) => (
-          <button
-            key={control.label}
-            type="button"
-            disabled
-            aria-label={`${control.label} (not yet available)`}
-            className="grid size-7 cursor-not-allowed place-items-center rounded-full border border-rule text-ink-soft"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="size-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d={control.d} />
-            </svg>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** Right-hand column of compact text-only headlines. */
 function SidebarCell({ articles }: { articles: CardArticle[] }) {
   return (
@@ -206,7 +163,7 @@ function SidebarCell({ articles }: { articles: CardArticle[] }) {
               <h3 className="mt-1 font-serif text-base leading-snug tracking-tight">
                 <Link
                   href={`/article/${article.slug}`}
-                  className="transition-colors hover:text-accent"
+                  className="transition-colors duration-150 ease-out hover:text-accent"
                 >
                   {article.headline}
                 </Link>
@@ -235,7 +192,7 @@ function FeatureCell({ article }: { article: CardArticle }) {
         <h3 className="mt-2 font-serif text-2xl leading-tight tracking-tight">
           <Link
             href={`/article/${article.slug}`}
-            className="transition-colors hover:text-accent"
+            className="transition-colors duration-150 ease-out hover:text-accent"
           >
             {article.headline}
           </Link>
@@ -270,7 +227,7 @@ function BriefingCell({ articles }: { articles: CardArticle[] }) {
                 <h3 className="mt-1 font-serif text-base leading-snug tracking-tight">
                   <Link
                     href={`/article/${article.slug}`}
-                    className="transition-colors hover:text-accent"
+                    className="transition-colors duration-150 ease-out hover:text-accent"
                   >
                     {article.headline}
                   </Link>
@@ -308,7 +265,10 @@ export default async function HomePage() {
 
   const lead = articles[0];
   const leadSubs = articles.slice(1, 3);
-  const strip = articles[3];
+  // The strip carousel's pool overlaps the sidebar's on purpose: both surface
+  // "more top stories," just as a scrollable strip versus a static list — the
+  // same duplication a real front page has between a ticker and a rail.
+  const carouselPool = articles.slice(3, 8);
   const sidebar = articles.slice(4, 8);
   const feature = articles[8];
   const briefing = articles.slice(9, 12);
@@ -332,9 +292,15 @@ export default async function HomePage() {
         <div className="grid lg:grid-cols-[1fr_20rem]">
           <div className="caged border border-rule">
             <LeadCell lead={lead} subLinks={leadSubs} />
-            {strip ? (
+            {carouselPool.length > 0 ? (
               <div className="border-t border-rule">
-                <StripCell article={strip} />
+                <HeadlineCarousel
+                  articles={carouselPool.map((a) => ({
+                    _id: a._id,
+                    slug: a.slug,
+                    headline: a.headline,
+                  }))}
+                />
               </div>
             ) : null}
           </div>

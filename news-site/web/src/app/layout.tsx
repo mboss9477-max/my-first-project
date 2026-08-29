@@ -60,6 +60,9 @@ export const metadata: Metadata = {
  */
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('csnews-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})();`;
 
+/** Same pre-paint pattern as THEME_INIT, for the text-size preference. */
+const TEXT_SIZE_INIT = `(function(){try{var s=localStorage.getItem('csnews-text-size');if(s==='large'||s==='larger'){document.documentElement.setAttribute('data-text-size',s)}}catch(e){}})();`;
+
 /** Publisher-level structured data, site-wide. */
 const siteJsonLd = {
   "@context": "https://schema.org",
@@ -98,6 +101,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+        <script dangerouslySetInnerHTML={{ __html: TEXT_SIZE_INIT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}

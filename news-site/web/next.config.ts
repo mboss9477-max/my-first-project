@@ -13,9 +13,13 @@ import { projectId } from "./src/sanity/env";
  * the inline JSON-LD blocks on article/category/breadcrumb pages; without
  * nonces there is no tighter option that does not break those.
  */
+// Dev needs 'unsafe-eval' for React's debugging callstacks; production never
+// uses eval and must not carry the relaxation.
+const isDev = process.env.NODE_ENV === "development";
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   // cdn.sanity.io: real hero/body images. picsum.photos: the placeholder
   // fallback only — remove once src/lib/placeholder-articles.ts is deleted.

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { ArticleBody } from "@/components/ArticleBody";
 import { Breadcrumbs, type Crumb } from "@/components/Breadcrumbs";
+import { ReadingProgress } from "@/components/ReadingProgress";
 import { RelatedArticles } from "@/components/RelatedArticles";
 import { ShareLinks } from "@/components/ShareLinks";
 import { formatDate } from "@/lib/format";
@@ -175,6 +176,7 @@ export default async function ArticlePage({
 
       <Breadcrumbs trail={trail} />
 
+      <ReadingProgress>
       <article className="mt-8">
         {article.category && article.categorySlug ? (
           <Link
@@ -294,6 +296,7 @@ export default async function ArticlePage({
 
         <ShareLinks headline={article.headline} slug={article.slug} />
       </article>
+      </ReadingProgress>
 
       <RelatedArticles
         articleId={article._id}

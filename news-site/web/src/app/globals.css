@@ -79,6 +79,19 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * Text size control. Scales the root so Tailwind's rem-based type scale grows
+ * proportionally everywhere, rather than touching individual components.
+ * Intentionally no transition — see TextSizeControl.tsx for why.
+ */
+html[data-text-size="large"] {
+  font-size: 112.5%;
+}
+
+html[data-text-size="larger"] {
+  font-size: 125%;
+}
+
 /* Small caps-ish label used for categories and section headings. */
 .label {
   font-size: 0.6875rem;
@@ -115,8 +128,11 @@ body {
 :root {
   --motion-fast: 150ms;
   --motion-base: 200ms;
-  /* Standard decelerating ease-out. */
-  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* Gentle deceleration, no overshoot — refined from the earlier curve.
+     Deliberately not a spring/bounce curve (e.g. cubic-bezier(0.34,1.56,...)):
+     that reads as playful, which contradicts the "never bouncy, editorial"
+     rule this whole system was built around. Do not swap this for a spring. */
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /*
@@ -139,16 +155,28 @@ body {
   animation: fade-in var(--motion-base) var(--motion-ease);
 }
 
-/* Bordered "caged" clusters: border warms toward gold and lifts slightly. */
+/*
+ * Bordered "caged" clusters: border warms toward gold, plus a physical lift —
+ * a few pixels of translateY alongside the shadow, so the card reads as
+ * rising off the page rather than just gaining a glow.
+ */
 .caged {
   transition:
     border-color var(--motion-fast) var(--motion-ease),
-    box-shadow var(--motion-base) var(--motion-ease);
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
 }
 
 .caged:hover {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
-  box-shadow: 0 2px 16px rgb(0 0 0 / 0.1);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caged:hover {
+    transform: none;
+  }
 }
 
 /*

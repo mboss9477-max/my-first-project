@@ -86,7 +86,7 @@ const components: PortableTextComponents = {
       <a
         href={value?.href}
         rel="noreferrer noopener"
-        className="underline underline-offset-2"
+        className="underline decoration-rule underline-offset-2 transition-colors duration-150 ease-out hover:decoration-accent hover:text-accent"
       >
         {children}
       </a>

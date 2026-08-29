@@ -37,7 +37,7 @@ export function NewsletterSignup() {
       {state?.ok ? (
         <p
           role="status"
-          className="mt-4 text-sm font-medium text-accent md:mt-0"
+          className="fade-in mt-4 text-sm font-medium text-accent md:mt-0"
         >
           You&rsquo;re on the list.
         </p>
