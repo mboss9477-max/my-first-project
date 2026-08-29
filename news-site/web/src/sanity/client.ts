@@ -40,3 +40,30 @@ export function previewClient() {
     perspective: "drafts",
   });
 }
+
+/**
+ * Write-capable client, for the newsletter signup action.
+ *
+ * Requires SANITY_WRITE_TOKEN — an Editor-role token created at
+ * sanity.io/manage/project/crji8h2y/api#tokens. Server-only, never
+ * NEXT_PUBLIC_. Separate from previewClient() deliberately: this one writes,
+ * that one only reads drafts — keeping them apart means a leaked preview
+ * token can never create or modify documents.
+ */
+export function writeClient() {
+  const token = process.env.SANITY_WRITE_TOKEN;
+
+  if (!token) {
+    throw new Error(
+      "SANITY_WRITE_TOKEN is not set — cannot write to Sanity from the server.",
+    );
+  }
+
+  return createClient({
+    projectId,
+    dataset,
+    apiVersion,
+    token,
+    useCdn: false,
+  });
+}

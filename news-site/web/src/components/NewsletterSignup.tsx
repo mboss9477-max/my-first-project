@@ -1,12 +1,24 @@
+"use client";
+
+import { useActionState } from "react";
+
+import { subscribe, type SubscribeResult } from "@/app/actions/subscribe";
 import { SITE_NAME } from "@/lib/site";
 
+const initialState: SubscribeResult | null = null;
+
 /**
- * Newsletter capture. Deliberately NOT wired to a provider — there is no
- * mailing list yet, and silently swallowing an address would be worse than
- * saying so. The form is disabled and labelled as such until a provider is
- * chosen; see ISSUES.md.
+ * Newsletter capture, writing directly into Sanity as a newsletterSubscriber
+ * document until a real ESP is chosen — see the schema file and ISSUES.md.
+ * This is a holding pattern for collecting real signups now, not the
+ * permanent home for that data.
  */
 export function NewsletterSignup() {
+  const [state, formAction, pending] = useActionState(
+    subscribe,
+    initialState,
+  );
+
   return (
     <section
       aria-labelledby="newsletter-heading"
@@ -22,33 +34,62 @@ export function NewsletterSignup() {
         </p>
       </div>
 
-      <form
-        className="mt-4 flex w-full max-w-sm gap-2 md:mt-0"
-        aria-describedby="newsletter-status"
-      >
-        <label htmlFor="newsletter-email" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="newsletter-email"
-          type="email"
-          name="email"
-          disabled
-          placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-sm border border-rule bg-surface px-3 py-2 text-sm transition-colors duration-150 ease-out placeholder:text-ink-soft disabled:cursor-not-allowed disabled:opacity-70"
-        />
-        <button
-          type="submit"
-          disabled
-          className="shrink-0 cursor-not-allowed rounded-sm border border-rule px-4 py-2 text-sm font-medium text-ink-soft"
+      {state?.ok ? (
+        <p
+          role="status"
+          className="mt-4 text-sm font-medium text-accent md:mt-0"
         >
-          Subscribe
-        </button>
-      </form>
+          You&rsquo;re on the list.
+        </p>
+      ) : (
+        <form
+          action={formAction}
+          className="mt-4 flex w-full max-w-sm flex-col gap-2 md:mt-0"
+          noValidate
+        >
+          <div className="flex gap-2">
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="newsletter-email"
+              type="email"
+              name="email"
+              required
+              disabled={pending}
+              placeholder="you@example.com"
+              aria-invalid={state?.ok === false}
+              aria-describedby={
+                state?.ok === false ? "newsletter-error" : undefined
+              }
+              className="min-w-0 flex-1 rounded-sm border border-rule bg-surface px-3 py-2 text-sm transition-colors duration-150 ease-out placeholder:text-ink-soft focus:border-accent focus:outline-none disabled:opacity-70"
+            />
+            {/* Honeypot: hidden from sighted and screen-reader users alike, so
+                only a bot filling every field will ever populate this. */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+            />
+            <button
+              type="submit"
+              disabled={pending}
+              className="shrink-0 rounded-sm border border-rule px-4 py-2 text-sm font-medium transition-colors duration-150 ease-out hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {pending ? "Joining…" : "Subscribe"}
+            </button>
+          </div>
 
-      <p id="newsletter-status" className="sr-only">
-        Newsletter signup is not yet available.
-      </p>
+          {state?.ok === false ? (
+            <p id="newsletter-error" role="alert" className="text-xs text-accent">
+              {state.error}
+            </p>
+          ) : null}
+        </form>
+      )}
     </section>
   );
 }
