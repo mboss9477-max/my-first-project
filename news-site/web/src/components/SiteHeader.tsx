@@ -67,7 +67,6 @@ export async function SiteHeader() {
             <span className="cursor-default text-xs opacity-80">
               UK Edition
             </span>
-            <span className="cursor-default text-xs font-semibold">Log in</span>
           </div>
         </div>
       </div>
