@@ -1,26 +1,242 @@
 @import "tailwindcss";
 
+/*
+ * CS NEWS — original visual identity.
+ * Ash-toned grounds (warm greys) with an antique gold accent.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f7f6f3;
+  --surface: #efeee9;
+  --ink: #22221f;
+  --ink-soft: #6b6b63;
+  /* 5.10:1 on --paper and 4.74:1 on --surface: clears WCAG AA for the 11px
+     uppercase category labels. Do not lighten without re-checking contrast. */
+  --accent: #81651b;
+  --rule: #dcdad2;
+
+  /*
+   * Header bands are deliberately fixed in both colour schemes: the utility bar
+   * stays dark ash and the masthead stays near-white, so the masthead reads as
+   * one lighter "formal" moment regardless of the visitor's theme.
+   */
+  --utility-bg: #1c1c19;
+  --utility-ink: #d7d4cb;
+  --masthead-bg: #ffffff;
+  --masthead-ink: #1b1b18;
+  --masthead-soft: #6f6e66;
+  --masthead-rule: #e3e0d7;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/*
+ * Dark palette. Applied when the OS asks for it *unless* the reader has
+ * explicitly chosen light, and always when they have explicitly chosen dark.
+ * Every token is defined in :root above, so no colour exists only inside a
+ * media query.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --paper: #161614;
+    --surface: #1e1e1b;
+    --ink: #edebe4;
+    --ink-soft: #a3a29a;
+    --accent: #d4af4f;
+    --rule: #322f29;
   }
 }
 
+:root[data-theme="dark"] {
+  --paper: #161614;
+  --surface: #1e1e1b;
+  --ink: #edebe4;
+  --ink-soft: #a3a29a;
+  --accent: #d4af4f;
+  --rule: #322f29;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-accent: var(--accent);
+  --color-rule: var(--rule);
+
+  --color-utility-bg: var(--utility-bg);
+  --color-utility-ink: var(--utility-ink);
+  --color-masthead-bg: var(--masthead-bg);
+  --color-masthead-ink: var(--masthead-ink);
+  --color-masthead-soft: var(--masthead-soft);
+  --color-masthead-rule: var(--masthead-rule);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Small caps-ish label used for categories and section headings. */
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+ * Focus
+ *
+ * Browser defaults are unreliable against custom ash/gold grounds, so focus is
+ * defined explicitly. `:focus-visible` rather than `:focus`, so a mouse click
+ * does not leave a ring behind but keyboard navigation always shows one.
+ * ------------------------------------------------------------------------ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+/* The masthead is a fixed light band, so the ring needs its own colour there. */
+.bg-masthead-bg :focus-visible {
+  outline-color: #8a6a16;
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion
+ *
+ * Editorial restraint: everything is 150-250ms on an ease-out curve (300ms for
+ * scroll entrances). No bounce, no elastic, no scroll-jacking. Motion signals
+ * affordance and continuity; it never gates content.
+ * ------------------------------------------------------------------------ */
+:root {
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  /* Standard decelerating ease-out. */
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/*
+ * Content fade-in. Deliberately NOT `opacity: 0` in the base rule — the
+ * element is visible by default and the keyframe only dips it for one frame.
+ * If the animation never runs, the content is still on screen.
+ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fade-in {
+  animation: fade-in var(--motion-base) var(--motion-ease);
+}
+
+/* Bordered "caged" clusters: border warms toward gold and lifts slightly. */
+.caged {
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+}
+
+.caged:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
+  box-shadow: 0 2px 16px rgb(0 0 0 / 0.1);
+}
+
+/*
+ * Card image hover zoom. The image scales inside an overflow-hidden frame, so
+ * the crop stays put and only the picture grows. Triggered from the enclosing
+ * card (Tailwind's `group`) so hovering anywhere on the card responds.
+ */
+.hover-zoom {
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+
+.group:hover .hover-zoom {
+  transform: scale(1.03);
+}
+
+/* Skeleton blocks for loading.tsx, tinted to the ash palette. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton {
+  background-color: var(--surface);
+  border-radius: 2px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+/* Softens the swap from skeleton to real content. */
+.skeleton-shell {
+  animation: fade-in var(--motion-fast) var(--motion-ease);
+}
+
+/*
+ * Reduced motion is non-negotiable and applied globally, so it also covers
+ * Tailwind's own transition utilities rather than only the classes above.
+ * Near-zero durations rather than `none`, so animationend/transitionend
+ * listeners still fire and nothing depends on an event that never arrives.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    view-transition-name: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Print
+ *
+ * Readers do print news articles. Drop the site chrome and interactive
+ * furniture, keep the story, and expose link targets.
+ * ------------------------------------------------------------------------ */
+@media print {
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  figure,
+  blockquote,
+  li {
+    break-inside: avoid;
+  }
 }

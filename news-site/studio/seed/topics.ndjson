@@ -1,0 +1,6 @@
+{"_id":"topic-transport","_type":"topic","name":"Transport","slug":{"_type":"slug","current":"transport"},"trending":true}
+{"_id":"topic-climate","_type":"topic","name":"Climate","slug":{"_type":"slug","current":"climate"},"trending":true}
+{"_id":"topic-local-government","_type":"topic","name":"Local government","slug":{"_type":"slug","current":"local-government"},"trending":true}
+{"_id":"topic-housing","_type":"topic","name":"Housing","slug":{"_type":"slug","current":"housing"},"trending":false}
+{"_id":"topic-energy","_type":"topic","name":"Energy","slug":{"_type":"slug","current":"energy"},"trending":false}
+{"_id":"topic-labour-market","_type":"topic","name":"Labour market","slug":{"_type":"slug","current":"labour-market"},"trending":false}

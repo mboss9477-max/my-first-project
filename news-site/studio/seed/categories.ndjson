@@ -1,0 +1,6 @@
+{"_id":"category-world","_type":"category","name":"World","slug":{"_type":"slug","current":"world"}}
+{"_id":"category-politics","_type":"category","name":"Politics","slug":{"_type":"slug","current":"politics"}}
+{"_id":"category-tech","_type":"category","name":"Tech","slug":{"_type":"slug","current":"tech"}}
+{"_id":"category-business","_type":"category","name":"Business","slug":{"_type":"slug","current":"business"}}
+{"_id":"category-culture","_type":"category","name":"Culture","slug":{"_type":"slug","current":"culture"}}
+{"_id":"category-sport","_type":"category","name":"Sport","slug":{"_type":"slug","current":"sport"}}

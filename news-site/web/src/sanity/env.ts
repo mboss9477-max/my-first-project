@@ -1,4 +1,10 @@
-export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "crji8h2y";
-export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
-export const apiVersion =
-  process.env.NEXT_PUBLIC_SANITY_API_VERSION ?? "2024-10-01";
+/**
+ * Single source of truth for this app's Sanity connection.
+ * Imported by the client, the image URL builder, and next.config.ts.
+ *
+ * If you later deploy across multiple datasets/environments, swap these
+ * constants for env vars here — this is the only file that needs to change.
+ */
+export const projectId = "crji8h2y";
+export const dataset = "production";
+export const apiVersion = "2024-10-01";
