@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CS NEWS — web
 
-## Getting Started
-
-First, run the development server:
+The Next.js 16 App Router front end. See the [repository README](../../README.md)
+for the full picture, seeding, and environment variables.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build; also typechecks
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+├── app/          # routes; every page is a server component
+├── components/   # shared UI ("use client" only where it must be)
+└── sanity/       # client, image builder, GROQ queries and their types
+└── lib/          # framework-free helpers: dates, reading time, XML, site config
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Conventions worth knowing
 
-## Learn More
+**Queries live in one place.** Every GROQ query and its TypeScript type is in
+`src/sanity/queries.ts`, sharing one `ARTICLE_CARD_FIELDS` projection so every
+list of articles has an identical shape.
 
-To learn more about Next.js, take a look at the following resources:
+**Client components are the exception.** Only `CategoryNav`, `Reveal` and
+`ThemeToggle` are client components. Hover and colour transitions are plain CSS
+precisely so cards can stay server-rendered.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Motion is CSS first.** `motion` is used only for the sliding nav underline
+(`layoutId`) and scroll reveals (`whileInView`). Durations and easing come from
+`--motion-*` tokens in `globals.css`, and a global `prefers-reduced-motion`
+guard covers Tailwind's own transition utilities too.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Placeholder content.** `src/lib/placeholder-articles.ts` renders only while
+the Sanity dataset is empty. Delete it, its fallback in `app/page.tsx`, and the
+`picsum.photos` entry in `next.config.ts` once there is real content.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Links without destinations are not links.** Anything with no route yet renders
+as text or a `disabled` button rather than `href="#"` — a dead anchor is
+focusable and announced as a link, which is worse than plain text.

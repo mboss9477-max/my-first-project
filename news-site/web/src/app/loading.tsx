@@ -7,7 +7,7 @@ import {
 /** Mirrors the homepage cage: lead + sidebar, then feature + briefing. */
 export default function HomeLoading() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-6">
+    <main className="skeleton-shell mx-auto max-w-6xl px-6 py-6">
       <LoadingAnnouncement label="Loading the front page" />
 
       <div className="grid lg:grid-cols-[1fr_20rem]">

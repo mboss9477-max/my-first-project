@@ -3,7 +3,7 @@ import { LoadingAnnouncement, SkeletonBlock } from "@/components/Skeletons";
 /** Mirrors the article page: kicker, headline, standfirst, hero, body. */
 export default function ArticleLoading() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
+    <main className="skeleton-shell mx-auto max-w-2xl px-6 py-10">
       <LoadingAnnouncement label="Loading article" />
 
       <SkeletonBlock className="h-4 w-40" />

@@ -7,7 +7,7 @@ import {
 /** Mirrors the category page: title block, then a list of article rows. */
 export default function CategoryLoading() {
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
+    <main className="skeleton-shell mx-auto max-w-4xl px-6 py-10">
       <LoadingAnnouncement label="Loading section" />
 
       <SkeletonBlock className="h-4 w-40" />
