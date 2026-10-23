@@ -1,9 +1,13 @@
 import type { CollectionConfig } from 'payload'
 
 import { isEditorOrAdmin, isStaff, publicRead } from '../access/roles'
+import { friendlyUploadRules } from './uploadRules'
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  hooks: {
+    beforeOperation: [friendlyUploadRules],
+  },
   access: {
     read: publicRead,
     create: isStaff,
@@ -15,7 +19,10 @@ export const Media: CollectionConfig = {
       name: 'alt',
       type: 'text',
       required: true,
-      admin: { description: 'Describes the image for screen readers and when it fails to load.' },
+      admin: {
+        description:
+          'Describe what is in the photo for readers who cannot see it. Accepted: JPG, PNG, WebP or AVIF under 25 MB. iPhone photos: export as JPEG first.',
+      },
     },
     {
       name: 'caption',
