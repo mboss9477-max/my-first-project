@@ -8,6 +8,13 @@ export const SITE_MONOGRAM = "CSN";
 export const SITE_TAGLINE = "Independent reporting from around the world.";
 
 /**
+ * Every date shown to readers is in UK time, whatever time zone the server
+ * runs in. Without this, a story published just after midnight in London
+ * showed the previous day's date on a UTC server.
+ */
+export const SITE_TIME_ZONE = "Europe/London";
+
+/**
  * Absolute origin, used for canonical URLs, Open Graph URLs, the sitemap and
  * robots.txt.
  *
