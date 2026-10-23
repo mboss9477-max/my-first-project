@@ -2,6 +2,8 @@ import { revalidatePath } from "next/cache";
 import type { NextRequest } from "next/server";
 import { parseBody } from "next-sanity/webhook";
 
+import { pathsToRevalidate } from "@/lib/revalidate-paths";
+
 /**
  * Sanity webhook target: publishing a document refreshes the affected pages
  * immediately instead of waiting out the 60s revalidate window.
@@ -54,33 +56,11 @@ export async function POST(request: NextRequest) {
     return new Response("Payload is missing _type", { status: 400 });
   }
 
-  // The front page reflects almost any content change, so it always refreshes.
-  const paths = new Set<string>(["/"]);
-
-  switch (body._type) {
-    case "article": {
-      if (body.slug) paths.add(`/article/${body.slug}`);
-      if (body.categorySlug) paths.add(`/category/${body.categorySlug}`);
-      break;
-    }
-    case "category": {
-      if (body.slug) paths.add(`/category/${body.slug}`);
-      break;
-    }
-    case "author": {
-      if (body.slug) paths.add(`/author/${body.slug}`);
-      break;
-    }
-    case "topic": {
-      if (body.slug) paths.add(`/topic/${body.slug}`);
-      break;
-    }
-  }
-
-  // Feeds and sitemaps list everything, so they refresh on any change.
-  paths.add("/feed.xml");
-  paths.add("/sitemap.xml");
-  paths.add("/news-sitemap.xml");
+  const paths = pathsToRevalidate({
+    type: body._type,
+    slug: body.slug,
+    categorySlug: body.categorySlug,
+  });
 
   for (const path of paths) {
     revalidatePath(path);
@@ -88,7 +68,7 @@ export async function POST(request: NextRequest) {
 
   return Response.json({
     revalidated: true,
-    paths: [...paths],
+    paths,
     at: new Date().toISOString(),
   });
 }
