@@ -70,9 +70,9 @@ Based on editorial workflow patterns and headless CMS conventions, the following
 * **The Confusion:** When a journalist uploads a 25 MB camera raw image or an iPhone photo, uploads fail abruptly. Currently, no maximum file size limit is configured in `Media.ts` (gap identified; Claude to add limit), and iPhone cameras default to Apple's HEIC format, which is not in our accepted MIME types (`image/jpeg`, `image/png`, `image/webp`, `image/avif`).
 * **Proposal:**
   - Display clear upload guidance directly on the upload dropzone:
-    - *"Accepted formats: JPEG, WebP, PNG, AVIF (Max 15 MB)"*
+    - *"Accepted formats: JPEG, WebP, PNG, AVIF (Max 25 MB)"*
     - *"iPhone photos: Change camera settings to 'Most Compatible' (JPEG) or export photo as JPEG before uploading."*
-  - Enforce server-side file size limits with actionable client-side feedback: *"This file is 24 MB. Maximum allowed upload size is 15 MB."*
+  - Enforce server-side file size limits with actionable client-side feedback: *"This file is 28 MB. Maximum allowed upload size is 25 MB."*
 
 ### 5. Invisible or Unclear Autosave State
 * **The Confusion:** Journalists writing under breaking deadlines are anxious about losing copy due to laptop sleep, accidental tab closures, or network drops.
