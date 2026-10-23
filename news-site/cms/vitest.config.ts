@@ -5,6 +5,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.int.spec.ts'],
+    // Each file boots its own Payload instance on its own SQLite file.
+    fileParallelism: false,
     // Payload boots once per file and pushes the schema to SQLite; give it time.
     hookTimeout: 120_000,
     testTimeout: 30_000,
