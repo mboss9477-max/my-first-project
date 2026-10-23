@@ -124,6 +124,49 @@ describe('writer role', () => {
     )
   })
 
+  // Found by Gemini's adversarial review of PR #9 (case c).
+  it("cannot read another writer's draft versions", async () => {
+    const theirs = await payload.create({
+      collection: 'articles',
+      data: { headline: 'Their secret', slug: 'their-secret', category: categoryId, _status: 'draft' },
+      draft: true,
+      ...asUser(otherWriter),
+    })
+    const versions = await payload
+      .findVersions({ collection: 'articles', where: { parent: { equals: theirs.id } }, ...asUser(writer) })
+      .catch(() => ({ docs: [] }))
+    expect(versions.docs).toHaveLength(0)
+  })
+
+  it("cannot read another writer's draft article itself, by id or by list", async () => {
+    const theirs = await payload.create({
+      collection: 'articles',
+      data: { headline: 'Their draft', slug: 'their-draft', category: categoryId, _status: 'draft' },
+      draft: true,
+      ...asUser(otherWriter),
+    })
+    await expectDenied(payload.findByID({ collection: 'articles', id: theirs.id, draft: true, ...asUser(writer) }))
+    for (const draft of [true, false]) {
+      const list = await payload.find({ collection: 'articles', draft, limit: 100, ...asUser(writer) })
+      expect(list.docs.map((doc) => doc.id)).not.toContain(theirs.id)
+    }
+  })
+
+  it('can still read its own draft versions', async () => {
+    const mine = await payload.create({
+      collection: 'articles',
+      data: { headline: 'My versions', slug: 'my-versions', category: categoryId, _status: 'draft' },
+      draft: true,
+      ...asUser(writer),
+    })
+    const versions = await payload.findVersions({
+      collection: 'articles',
+      where: { parent: { equals: mine.id } },
+      ...asUser(writer),
+    })
+    expect(versions.docs.length).toBeGreaterThan(0)
+  })
+
   it('cannot change its own role', async () => {
     const updated = await payload.update({
       collection: 'users',

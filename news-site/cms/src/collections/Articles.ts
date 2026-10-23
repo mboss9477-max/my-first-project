@@ -1,13 +1,31 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 
-import { hasRole, isEditorOrAdmin, isStaff } from '../access/roles'
+import { hasRole, isEditorOrAdmin } from '../access/roles'
 
 /**
- * Public sees published articles only. Staff see everything, including drafts.
+ * Public sees published articles only. Editors and admins see everything.
+ * Writers see published articles plus their own drafts, never a colleague's
+ * unpublished work.
  */
 const readArticles: Access = ({ req: { user } }) => {
-  if (user) return true
-  return { _status: { equals: 'published' } }
+  if (!user) return { _status: { equals: 'published' } }
+  if (hasRole(user, 'admin', 'editor')) return true
+  const publishedOrOwn: Where = {
+    or: [{ _status: { equals: 'published' } }, { createdBy: { equals: user.id } }],
+  }
+  return publishedOrOwn
+}
+
+/**
+ * Version history holds every saved draft, so it needs the same rule:
+ * writers only see the history of articles they created. Found by Gemini's
+ * adversarial review of PR #9 (case c); `isStaff` leaked colleagues' drafts.
+ */
+const readArticleVersions: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (hasRole(user, 'admin', 'editor')) return true
+  const ownHistory: Where = { 'version.createdBy': { equals: user.id } }
+  return ownHistory
 }
 
 /**
@@ -46,7 +64,7 @@ export const Articles: CollectionConfig = {
     create: createArticles,
     update: updateArticles,
     delete: isEditorOrAdmin,
-    readVersions: isStaff,
+    readVersions: readArticleVersions,
   },
   versions: {
     maxPerDoc: 50,
