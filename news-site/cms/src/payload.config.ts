@@ -44,4 +44,9 @@ export default buildConfig({
   }),
   sharp,
   plugins: [],
+  jobs: {
+    // Scheduled publish/unpublish jobs are queued on the default queue and
+    // only run when something processes it. Check every minute.
+    autoRun: [{ cron: '* * * * *', queue: 'default' }],
+  },
 })
