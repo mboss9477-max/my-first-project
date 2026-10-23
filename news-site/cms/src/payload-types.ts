@@ -253,7 +253,7 @@ export interface Topic {
 export interface Media {
   id: number;
   /**
-   * Describe what is in the photo for readers who cannot see it. Accepted: JPG, PNG, WebP or AVIF under 15 MB. iPhone photos: export as JPEG first.
+   * Describe what is in the photo for readers who cannot see it. Accepted: JPG, PNG, WebP or AVIF under 25 MB. iPhone photos: export as JPEG first.
    */
   alt: string;
   /**
