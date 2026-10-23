@@ -39,22 +39,23 @@ The other agent edits an area only through a claimed task (see Workflow) with th
 | Legacy content model | `news-site/studio/**` | Claude (bug fixes only) |
 | Legacy data layer | `news-site/web/src/sanity/**` | Claude (bug fixes only) |
 | Server and platform | `web/src/app/api/**`, `web/src/app/actions/**`, `web/next.config.ts`, `sitemap.ts`, `robots.ts`, `feed.xml/**`, `news-sitemap.xml/**` | Claude |
-| Page data, metadata, JSON-LD, `revalidate` exports (anywhere in `web/src/app/**`) | | Claude |
+| `page.tsx` files: data fetching, `generateMetadata`, JSON-LD, `revalidate` (anywhere in `web/src/app/**`) | | Claude, thin wrappers only (see below) |
 | CI and repo config | `.github/**`, `.claude/**`, `.gitattributes` | Claude |
 | UI components | `web/src/components/**` | Gemini |
-| Page markup, `loading.tsx`, `error.tsx`, `not-found.tsx`, new-route layouts | `web/src/app/**` (not the data/metadata parts above) | Gemini |
+| Rendering, `loading.tsx`, `error.tsx`, `not-found.tsx` | `web/src/components/**` and the files named here under `web/src/app/**` | Gemini |
 | Styling | `web/src/app/globals.css`, Tailwind config | Gemini (tokens follow the settled design rules below) |
 | Tests | `**/*.test.ts(x)`, `vitest.config.*`, `web/tests/**` | Gemini |
 | New backend | `news-site/api/**` (proposed; confirm in the design doc) | Claude for API, data, auth, storage; Gemini for the editor UI |
 | Hot files | `package.json`, both `package-lock.json`, `layout.tsx`, `app/page.tsx`, `ISSUES.md`, `CHANGELOG.md`, `README.md` | Nobody: a claim is required every time, and at most one open PR touches a given hot file |
 
-Editing an existing `page.tsx` always needs a claim, even for the owner of the markup.
+**`page.tsx` rule.** A `page.tsx` holds data, metadata and JSX in one file, so ownership is never split inside it. Page files stay thin: they fetch data, set metadata and hand props to a presentational component in `web/src/components/**`. Rendering changes go in the component (Gemini). Any edit to a `page.tsx` or `layout.tsx` claims the *whole file* for that task, whoever makes it, and only one open PR may touch a given page file.
 
 ## Branches, worktrees, ports
 
 - **No direct pushes to `main`.** Every change is a PR. (GitHub branch protection is the human's setting to turn on; the rule applies regardless.)
 - Branches: `claude/<topic>`, `gemini/<topic>`. One per task, short-lived, deleted after merge.
-- **Separate git worktrees.** Claude uses the main checkout. Gemini uses a sibling: `git worktree add ../my-first-project-gemini -b gemini/<topic> origin/main`, then its own `npm ci` and its own untracked `.env.local`.
+- **Separate git worktrees.** Claude uses the main checkout. Gemini uses a persistent sibling worktree, `../my-first-project-gemini`, created once with `git worktree add ../my-first-project-gemini -b gemini/<topic> origin/main` and then its own `npm ci` and its own untracked `.env.local`. For each new task Gemini works inside it: `git fetch origin && git switch -c gemini/<topic> origin/main` (only with a clean `git status`).
+- **Review worktrees.** Never check a PR out into your own working worktree. Reviewers either read remotely (`git fetch`, `git diff origin/main...origin/<branch>`, `git show origin/<branch>:<path>`) or, to run checks, create a temporary one: `git worktree add ../review-<topic> origin/<branch>`, run `npm ci` and the checks there, then `git worktree remove ../review-<topic>`.
 - Dev ports: Claude 3000 (web), 3333 (studio). Gemini 3100 (`next dev -p 3100`), 3433 (`sanity dev --port 3433`). Stop your servers when done; kill stale ones by PID.
 
 ## Workflow
@@ -64,7 +65,7 @@ Editing an existing `page.tsx` always needs a claim, even for the owner of the m
 3. **Claim by draft PR**: push the branch and open a draft PR titled `[WIP] <agent>: <topic>` listing the paths you will touch.
 4. Small commits. Before marking ready: `npx tsc --noEmit` and `npm run build` pass. For web changes compare the build's route table before and after (`●` static vs `ƒ` dynamic) and flag any route that flipped.
 5. Mark ready. CI must be green and the other agent must review. **The human merges, using squash** (one commit per task, easy to revert; the PR description carries the attribution trailers).
-6. **Review standard.** Check the branch out in your own worktree, run the checks, read the diff against the *stated task*. Write down: what you ran, what you found, a plain-language summary of what the change does, and one thing you tried to break. "LGTM" without evidence does not count. A reviewer's objection blocks the merge until the author addresses it or the human overrules.
+6. **Review standard.** Use a review worktree (see above), run the checks, read the diff against the *stated task*. Write down: what you ran, what you found, a plain-language summary of what the change does, and one thing you tried to break. "LGTM" without evidence does not count. A reviewer's objection blocks the merge until the author addresses it or the human overrules.
 7. **UI changes need the human's visual sign-off** (screenshots or a running preview) before merge. Neither agent can reliably see rendered UI, so a passing build is not enough.
 8. Merge is not deploy. Deploying is a separate human-triggered step, and the human is told which commit goes out.
 9. A rebase conflict in a file you do not own: do not guess. Comment on the PR and ask the owner via the human.
@@ -104,7 +105,7 @@ Editing an existing `page.tsx` always needs a claim, even for the owner of the m
 
 - **S13** Disagree in writing (PR comment or handoff) with evidence. No silent reverts, no force-pushes to the other agent's branches, no rewriting its commits.
 - **S14** Ask the human when the spec is ambiguous and the choice is costly. Decide and note it when it is cheap.
-- **S15** Commits are small and say *why*. Each agent adds its own tool's standard `Co-Authored-By` trailer (Claude: `Co-Authored-By: Claude <noreply@anthropic.com>` as the tool generates it; Gemini: whatever Gemini CLI generates by default; do not invent addresses). Record the exact strings here after the first commits.
+- **S15** Commits are small and say *why*. Each agent ends its commits with a `Co-Authored-By` trailer. Claude uses the exact line its tool generates (it names the model, for example `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`). Gemini does not generate one, so it uses exactly `Co-Authored-By: Gemini <noreply@google.com>`. That address is a label for attribution, not a mailbox. Do not invent other variants.
 
 **Backend**
 
