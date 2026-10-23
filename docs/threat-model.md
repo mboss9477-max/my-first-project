@@ -53,6 +53,8 @@
 | T19 | Insider mistake by an agent or human | Production actions need the human's go-ahead (S5); PR reviews; no direct pushes to `main` | rule |
 | T20 | Phishing of non-technical staff, leading to subtle edits (fake quotes, malicious links) rather than obvious defacement | T8 second factor; editor review before publish; version history so changes can be audited and reverted; short guidance for writers on phishing | not built, Phase 1 |
 | T21 | Server secrets bundled into public JavaScript (a `NEXT_PUBLIC_` prefix or a server module imported by a client component) | Never prefix secrets with `NEXT_PUBLIC_`; keep secret access in server-only modules (the `server-only` package); reviewers grep for `NEXT_PUBLIC_` on every PR that adds env vars | rule, Phase 1 |
+| T22 | Scheduled-publish abuse (found in the CMS trial, PR #9). Payload 3.92's schedule handler does not check publish rights when *queuing*, and its cancel option deletes a job by id with full privileges, so any staff user who can reach the admin could cancel an editor's scheduled publish | Publishing itself is safe: the job runs with the scheduler's rights and a writer's job is refused (tested). For cancellation: restrict access to the `payload-jobs` collection to editors and admins, or override the endpoint; re-test after each Payload upgrade **[check]** | partly mitigated, Phase 1 |
+| T23 | API surface left open in production (GraphQL playground, REST listing) | Confirm the playground is disabled in production builds and only published content is readable anonymously (anonymous read rules tested in PR #9) **[check]** | Phase 1 |
 
 ## 4. Out of scope for now
 
