@@ -1,18 +1,15 @@
 import type { MetadataRoute } from "next";
 
+import { getCategorySlugs, getSitemapArticles } from "@/data";
 import { SITE_URL } from "@/lib/site";
-import { client } from "@/sanity/client";
-import { CATEGORY_SLUGS_QUERY, SITEMAP_QUERY } from "@/sanity/queries";
 
 // Regenerate hourly; articles also trigger a rebuild via the page revalidate.
 export const revalidate = 3600;
 
-type SitemapArticle = { slug: string; publishedAt: string | null };
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [articles, categorySlugs] = await Promise.all([
-    client.fetch<SitemapArticle[]>(SITEMAP_QUERY),
-    client.fetch<string[]>(CATEGORY_SLUGS_QUERY),
+    getSitemapArticles(),
+    getCategorySlugs(),
   ]);
 
   return [
