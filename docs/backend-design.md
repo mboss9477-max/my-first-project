@@ -2,149 +2,169 @@
 
 | | |
 |---|---|
-| **Author** | Claude Code (draft v0.1) |
-| **Reviewer** | Gemini (adds section 9: editor UI, rich text, API contract) |
+| **Author** | Claude Code (v0.3) |
+| **Reviewer** | Gemini (review of v0.1 incorporated; re-review of v0.3 requested) |
 | **Decider** | The human owner |
-| **Status** | DRAFT for review. Nothing here is built or decided. |
-| **Evidence quality** | Section 3 facts were checked against each project's official docs and repos on 2026-10-23 (v0.2). Items still marked **[verify]** could not be confirmed and must be checked before a decision rests on them. Payload's `main` branch is a 4.0 beta, while the docs pages read were the 3.x docs, so behaviour may differ in 4.0. |
+| **Status** | DRAFT for decision. Nothing here is built or decided. |
+| **Evidence** | Third-party facts were checked against official docs and repos on 2026-10-23. Items marked **[verify]** could not be confirmed. Payload's `main` is a 4.0 beta; the docs pages read were the 3.x docs. |
 
-## 1. Goal and scope
+## 1. Owner requirements and constraints
 
-Replace Sanity with a backend we control, without taking the live site down.
+**Essentials the owner listed**
+1. Article management: create, update, delete, schedule; text, media, tags.
+2. User accounts: registration, secure login, subscriber tiers (free vs premium).
+3. Paywall: count article views and restrict content by subscription.
+4. Content delivery API: structured article data for the website and mobile apps.
+5. In-memory caching so breaking-news spikes do not crash the database.
+6. Relational database: authors, articles, categories, comments.
+7. External asset storage for high-resolution images and videos.
+8. Full-text search by keyword, date, author.
 
-**In scope (v1, per the owner's default)**: content storage (articles, categories, topics, authors, corrections, newsletter signups, images); an editing UI for non-technical writers; access control (writers draft, editors publish); the data layer the web app reads from.
+**Constraint: the budget is very low. No paid subscriptions except the VPS.** Everything below is chosen to cost nothing beyond the VPS unless it is explicitly marked as a decision. Payment processing necessarily takes per-transaction fees when real money moves; see 6.
 
-**Out of scope (v1)**: reader accounts, comments, paid subscriptions, multilingual (later phase; the vendor choices already made still apply).
+**Standing requirements**: the live site keeps working throughout and Sanity runs until the human approves its shutdown; static generation and 60 s revalidation stay (AGENTS.md S7); verified restorable backup before any migration (S16); migrations are committed files (S18); no secrets in the repo (S1); passwords hashed with a vetted algorithm (S16).
 
-**Hard requirements**
-- The live site keeps working throughout; Sanity runs until cutover is verified and the human approves shutdown.
-- Static generation and 60 s revalidation keep working (AGENTS.md S7).
-- A verified, restorable backup before any migration (S16). Migrations are committed files (S18).
-- No secrets in the repo (S1). Passwords hashed with a vetted algorithm, never our own scheme (S16).
-
-## 2. What Sanity gives us today (what we must replace)
+## 2. What Sanity gives us today
 
 | Capability | Where it lives today |
 |---|---|
 | Editing UI, drafts, publish | `news-site/studio` (hosted Studio) |
 | Content schema | `news-site/studio/schemaTypes/*` |
 | Queries | GROQ in `news-site/web/src/sanity/queries.ts` |
-| Image storage, CDN, resize and crop, blur placeholder | Sanity CDN; `cdn.sanity.io` is in `next.config.ts` `remotePatterns` and in the CSP `img-src` |
-| Instant refresh on publish | Webhook to `web/src/app/api/revalidate` using `SANITY_REVALIDATE_SECRET` |
-| Draft preview | `web/src/app/api/draft-mode` with `SANITY_PREVIEW_SECRET` |
-| Roles and logins | Sanity's own accounts (the contributor role was never built) |
+| Image storage, CDN, resize, crop and focal point (hotspot), blur placeholder | Sanity CDN; `cdn.sanity.io` is in `next.config.ts` `remotePatterns` and the CSP `img-src` |
+| Instant refresh on publish | Webhook to `web/src/app/api/revalidate` (`SANITY_REVALIDATE_SECRET`) |
+| Draft preview | `web/src/app/api/draft-mode` (`SANITY_PREVIEW_SECRET`) |
+| Roles and logins | Sanity's accounts (contributor role never built) |
 | Backups, uptime | Sanity's responsibility |
 
-The last two rows are the main reason this is a risk increase: today someone else runs authentication, storage and backups.
-
-### Current data model
-
-- **article**: headline, slug, excerpt (max 280 recommended), author (ref), byline override (guest writers), publishedAt, updatedAt, category (ref, exactly one), topics (refs, many), featured (bool), heroImage (with alt, caption, hotspot/crop), body (rich text: paragraphs plus inline images with alt and caption), corrections (list of {correctedAt, note}).
-- **category**, **topic** (has a "trending" flag), **author** (name, slug, role, bio), **newsletterSubscriber**.
-- Rules to preserve: alt text required once an image is set; warning when a reference points at an unpublished document (in Sanity a published article can reference a draft and the value silently vanishes on the live site; a new system should prevent that).
-- Volume: 13 articles (12 are fictional demos), 6 categories, 6 topics, 1 author, a handful of images. Migration is small today and gets more expensive with every real article.
+**Current data model**: *article* (headline, slug, excerpt, author ref, byline override, publishedAt, updatedAt, category ref, topics refs, featured, heroImage with alt, caption and hotspot/crop, body, corrections list); *category*; *topic* (trending flag); *author*; *newsletterSubscriber*. Rules to preserve: alt text required once an image is set, and no dangling reference to an unpublished document. Volume: 13 articles (12 demos), 6 categories, 6 topics, 1 author.
 
 ## 3. Options
 
-### A. Fully custom backend
-Our own API and database plus our own editor UI.
-- Control over everything, no CMS lock-in.
-- We build and maintain: auth, roles, drafts and publishing workflow, rich-text editor integration, image upload and processing, media library, admin UI, validation, backups. This is months of work for two agents with one human reviewer, and the highest security risk.
+- **A. Fully custom backend.** Our own API, database and editor UI. Full control; we build and secure auth, roles, drafts, scheduling, editor integration, uploads, media library and admin UI. Months of work; the largest security surface.
+- **B. Self-host Payload CMS** (code-first, Next.js, Postgres). Gives admin, roles, drafts, scheduling and uploads out of the box; we write schema, access rules and the reader-facing parts.
+- **C. Self-host Strapi or Directus** as a separate service. Strapi puts Review Workflows and Audit Logs behind Enterprise and Releases and Content History behind a paid plan; Directus's licence is source-available, not MIT. Both weaker on cost and licensing than B.
 
-### B. Self-host Payload CMS (code-first, embedded in Next.js)
-Verified in official docs ([installation](https://payloadcms.com/docs/getting-started/installation), [database](https://payloadcms.com/docs/database/overview), [migrations](https://payloadcms.com/docs/database/migrations), [rich text](https://payloadcms.com/docs/rich-text/overview), [drafts](https://payloadcms.com/docs/versions/drafts), [uploads](https://payloadcms.com/docs/upload/overview)):
-- MIT licence (package.json; the root LICENSE URL returned 404).
-- Installs into an existing Next.js app. Supported Next versions include **16.2.6 and later**; this repo is on 16.3.1.
-- **Node requirement is stated inconsistently**: docs say `^22.23.4 || >=24.22.1`, `packages/payload` engines say `>=24.22.1`. Our repo says Node >= 20. The server's Node version must be checked.
-- Postgres via Drizzle (`@payloadcms/db-postgres`). Migrations are committed SQL files in `src/migrations`; development uses push mode by default, so we must forbid push against production (S18).
-- Rich text: Lexical by default, stored as Lexical JSON. Slate is deprecated and removed in 4.0.
-- Access functions per operation. A role can create drafts and be blocked from publishing (docs example restricts updates to `_status: draft`). Scheduled publishing exists (`schedulePublish`) but needs a Jobs queue running.
-- Uploads: local disk by default, `sharp` for resizing, S3-compatible adapter available and recommended for Node hosts.
-- Separate admin deployment: **not stated in the docs read [verify]**. A remote REST/GraphQL API and a beta SDK exist, but the admin is served by `@payloadcms/next` inside a Next app, so the admin sharing a process with the public site is the likely default.
-- Memory sizing guidance was not found [verify]. Concurrent uploads multiply memory use.
-- The `main` branch is a **4.0 beta**. We must choose a stable version and check what 4.0 changes before building.
+**Verified facts, Payload** ([installation](https://payloadcms.com/docs/getting-started/installation), [database](https://payloadcms.com/docs/database/overview), [migrations](https://payloadcms.com/docs/database/migrations), [rich text](https://payloadcms.com/docs/rich-text/overview), [drafts](https://payloadcms.com/docs/versions/drafts), [uploads](https://payloadcms.com/docs/upload/overview), [auth](https://payloadcms.com/docs/authentication/overview), [admin](https://payloadcms.com/docs/admin/overview), [stripe plugin](https://payloadcms.com/docs/plugins/stripe), [search plugin](https://payloadcms.com/docs/plugins/search)):
+- MIT licence. Next.js 16 supported from **16.2.6**; this repo is on 16.3.1. **Node requirement inconsistent** (docs `^22.23.4 || >=24.22.1`, package engines `>=24.22.1`; our repo says >=20), so the VPS build's Node version must be checked.
+- Postgres via Drizzle. Migrations are committed SQL files; dev uses push mode, which we ban against production (S18).
+- Lexical rich text stored as JSON. Slate deprecated, removed in 4.0.
+- Per-operation access functions; a role can create drafts but be blocked from publishing; scheduled publishing exists (`schedulePublish`) but needs a running Jobs queue.
+- A **separate auth-enabled collection for readers** is supported, with the admin limited to one collection (`admin.user`). Email verification and password reset are built in. How mail is sent (SMTP or adapter) was not confirmed **[verify]**.
+- Official Stripe plugin: customer and product sync plus webhook handlers; it does not decide entitlements, our handlers do. Official search plugin: a synced `search` collection in our own database; whether it uses Postgres full-text was not confirmed **[verify]**.
+- Uploads: local disk by default, `sharp` for resizing, S3 adapter available. Concurrent uploads multiply memory use; no sizing guidance found **[verify]**.
+- Beta warning: choose a stable release and check what 4.0 changes before building.
 
-Fits our stack. Gives an admin panel with roles and drafts, so we write schema and access rules instead of an editor. Learning curve is reported as steeper than UI-first tools (reviewer opinion, not verified).
+**Verified facts, infrastructure**
+- **Hetzner Object Storage** is S3-compatible but a paid subscription (about 6.49 EUR per month excl. VAT per its page). **Cloudflare R2** has a free tier (10 GB-month, no egress charges per its docs); whether an account needs a payment method on file was not checked. **MinIO's community repo is archived and unmaintained as of 2026-04-25**, so we should not self-host it. Garage not evaluated.
+- **Postgres full-text search** is built in (tsvector, GIN indexes, ranking, language configs) and combines with ordinary SQL filters for date and author. No typo tolerance natively; `pg_trgm` helps but needs extra setup. **Meilisearch** Community is MIT and typo-tolerant by default; RAM need not found **[verify]**.
+- **Next.js self-hosting**: a single `next start` instance with persistent disk needs no Redis; the ISR cache lives on local disk. A shared cache handler (Redis or S3) is needed only for multiple instances. On Coolify, redeploying can lose that disk cache unless a volume is mounted (inference, not docs). **Redis 8+** is AGPL (or RSAL/SSPL); **Valkey** is BSD under the Linux Foundation.
 
-### C. Self-host Directus or Strapi
-Verified in official sources ([Strapi LICENSE](https://github.com/strapi/strapi/blob/main/LICENSE), [Strapi docs](https://docs.strapi.io/cms/intro), [Directus licence](https://github.com/directus/directus/blob/main/license), [Directus pricing](https://directus.com/pricing)):
-- **Strapi**: Community Edition is MIT, but code in `ee/` directories is under a separate Enterprise licence. Postgres supported (14+). Per-action permissions including publish exist on the free tier (RBAC page, **confirm on the Draft & Publish page [verify]**). **Review Workflows and Audit Logs require an Enterprise plan; Releases and Content History require a paid Growth plan.** Scheduled publishing not confirmed. Rich-text format not confirmed [verify].
-- **Directus**: **not MIT.** It uses the Monospace Sustainable Core License 1.0, which allows internal use and bars "Competing Use", and converts to GPL-3.0 four years after release. The free core tier needs no licence key, and organisations under $5M revenue and 50 employees can get a free "Open Innovation Grant". The free tier lists "Advanced RBAC", but whether a draft-only writer role works is **not verified**. Rich text is stored as HTML. Minimum 512 MB, recommended 2 vCPU / 2 GB. Docker required. Postgres supported.
-- Both run as separate services, which isolates the admin from the public site. We would still write the data layer and migration and deal with a second service in Coolify. Claims that their admin UIs are friendlier for non-technical users are reviewer opinion only.
+## 4. Architecture
 
-### Comparison
+```
+Readers --> csnews.news (Next.js, static + ISR, as today)
+                |  HTTP, internal network, cached 60 s, webhook revalidation
+                v
+          cms.csnews.news (Payload as its OWN Next app/container)  --> Postgres (own volume)
+                |                                                        ^
+          editors, writers (admin UI)              nightly dump --> off-server backup
+                v
+           media on a persistent volume (images; no video hosting)
+```
 
-| Criterion | A. Custom | B. Payload | C. Directus/Strapi |
-|---|---|---|---|
-| Time to a usable editor for the family writer | Slowest | Fast | Fast |
-| Fits current Next.js code | Yes | Best | Via REST/GraphQL |
-| Admin isolated from public site | Yes | Only if deployed separately | Yes |
-| Security surface we own | Largest | Medium | Medium |
-| Lock-in | None | Low (MIT, Postgres) | Low to medium (Directus licence is source-available; Strapi Enterprise features are paid) |
-| Needs human-created third-party accounts | None | None if self-hosted | None if self-hosted |
-| Ongoing patching burden | Ours | Ours (upstream releases) | Ours (upstream releases) |
+**Process isolation (accepted from Gemini's review).** The CMS runs as a separate container and Next app, not inside the public site. An admin-side crash, memory spike or vulnerability must not take the reader site down. The public site reads through the CMS REST API (or a read-only database role), never the admin. Gemini's figure of "1 to 1.5 GB" memory for image processing is **unverified**; the VPS capacity must be measured (see 9).
 
-### Recommendation (for the human to accept or reject)
-Lean **B (Payload, self-hosted on the existing VPS with Postgres)**, pending the remaining [verify] items and a one-day spike. It keeps our stack, is plain MIT, and gives a real editor without us writing one, which is the largest single cost in option A. The checked facts weaken C: Strapi puts review workflows behind Enterprise, and Directus's licence is source-available rather than MIT. Spike goals: confirm the Node version and stable Payload release that work with our Next 16.3.1 on Coolify, test the writer draft-only role, test Portable Text to Lexical conversion on the 13 articles, and measure memory on the VPS. **If the owner's intent is a fully bespoke backend regardless of cost, A is possible but should be built in stages on top of this same design** (data seam, migration scripts, API contract).
+**Data seam.** Pages call functions in `web/src/data/`, not Sanity directly. First implementation wraps Sanity with no behaviour change; the second reads the CMS. This keeps UI work unaffected by cutover.
 
-## 4. Hosting and data
+## 5. Essentials: design and verdict
 
-- Postgres on the existing Hetzner VPS under Coolify, with scheduled dumps to storage off that server. Managed Postgres (Neon, Supabase) was suggested; it adds an account, recurring cost and lock-in, and is not needed to start. Decision needed (Q6).
-- **Backups**: nightly encrypted dump to off-server storage, plus a documented, *tested* restore. No migration to production until a restore has been proven once.
-- **Capacity check needed**: confirm VPS RAM and disk can host the site, Postgres and a CMS together. Not yet measured.
+| # | Essential | Design | Cost | Phase |
+|---|---|---|---|---|
+| 1 | Article management, scheduling, media, tags | Payload collections (articles, categories, topics, authors, media), drafts plus `schedulePublish` with a Jobs worker | 0 | 1 |
+| 4 | Content API for site and mobile apps | Payload REST (GraphQL optional) with documented access rules; the public site and any future app use the same API | 0 | 1 |
+| 7 | External asset storage | **Images**: persistent volume on the VPS, off-server backup. **Video**: embed from YouTube or Vimeo, do not host. Object storage (R2 free tier, or paid) is a later swap through Payload's S3 adapter | 0 | 1 |
+| 6 | Relational database | Postgres on the VPS, committed migrations. Comments: see deferred | 0 | 1 |
+| 2 | Reader accounts, tiers | Separate `readers` auth collection (verified supported), tier stored on the reader, set only by payment webhooks. Needs transactional email (free-tier provider or SMTP, **decision**) | 0 to low | 2 |
+| 8 | Full-text search | Postgres full-text search plus `pg_trgm` for typos, filter by date, author and category. Meilisearch only if this proves inadequate | 0 | 2 |
+| 3 | Paywall and view metering | See 6. Needs readers and payments first | per-transaction fees only | 3 |
+| 5 | In-memory caching | **Not needed yet.** One Next instance uses its disk cache, and ISR already absorbs traffic spikes for static pages. Mount a volume for the cache on Coolify. Add Valkey (BSD) only when running several instances or after load tests show database pressure | 0 | later |
 
-## 5. Images
+**Verdict.** Option B, staged, self-hosted, with the CMS isolated. It is the only path that gives a real editor and the full essentials list at zero recurring cost beyond the VPS and with the least code we must secure ourselves. Option A is possible but would take far longer for the same result. This is a recommendation; the stack decision is the human's.
 
-- Store uploads on a Coolify persistent volume or S3-compatible bucket. A bucket survives server loss; a volume is simpler. Decision needed.
-- Replace Sanity's on-the-fly resize and blur placeholder with `next/image` plus generated sizes and a stored blur hash. Update `remotePatterns` and CSP `img-src` accordingly.
-- Preserve alt text and caption; keep alt required when an image is set.
+**Deferred or declined, and why**
+- **Comments**: the owner's list mentions them in the data model. They need moderation, spam control and legal handling. Recommend after Phase 3, or never.
+- **Redis**: see row 5.
+- **Hosted video, paid cloud storage, managed search**: conflict with the budget.
+- **Mobile apps**: out of scope; the API is the only commitment.
 
-## 6. Rich text and migration
+## 6. Paywall, in more detail (Phase 3)
 
-- Sanity stores Portable Text (JSON blocks). Options: keep Portable Text as the stored format via an editor that supports it, or convert to the new editor's format (Lexical JSON for Payload **[verify]**).
-- Body content in the 13 articles is paragraphs and inline images, which are straightforward to convert. A one-off script with a diff report (block count, text hash per article) proves nothing was lost.
-- Do this migration early. Cost grows per real article.
+- **Problem**: our pages are statically generated, so everyone gets the same HTML. Reading `cookies()` in a page makes the route dynamic (Next docs).
+- **Design**: static pages carry only the headline, excerpt and a teaser. The full premium body is fetched on demand from an authenticated endpoint that checks the session and tier on the server. The body is never in the static HTML or the public cache. Enforcement is server-side; hiding content in the browser alone is not access control.
+- **Metering**: count views per signed-in reader on the server; anonymous metering by cookie is bypassable and is accepted as soft.
+- **Billing**: Stripe Checkout (hosted) and the customer portal keep card data off our servers; tier changes come only from verified webhook events. Stripe's pricing and the events we need were not fully verified **[verify]**. Stripe has no monthly fee by itself but charges per transaction; the owner must accept that, and no money moves until a legal and tax check is done (not an agent decision).
+- **Not before**: reader accounts (Phase 2) and the threat model (7).
 
-## 7. Auth and roles
+## 7. Security: threat model first (S16)
 
-- Roles: **writer** (create and edit own drafts, cannot publish), **editor** (review and publish), **admin** (users, settings). Matches the planned moderation loop: writer drafts, editor reviews, editor publishes.
-- Threat model required before any login goes live (S16): password hashing, session storage, rate limiting, admin URL exposure, upload validation, CSRF, account recovery. To be written as `docs/threat-model.md` by Claude and reviewed by Gemini.
+Required before any login goes live: `docs/threat-model.md` (Claude drafts, Gemini reviews). Must cover: password hashing and login throttling, session cookies (HttpOnly, SameSite), CSRF, account recovery, reader versus staff separation, admin exposure (restrict by network or path, strong staff passwords, 2FA if available), upload validation and size limits, webhook signature verification, rate limiting, secrets handling (S17), backups and restore, patching process.
 
-## 8. Cutover (proposal, for human decision)
+## 8. Rich text, images, editing UX
 
-1. Build the new backend beside Sanity, deployed to a staging subdomain, no production changes.
-2. Add the data seam `web/src/data/` so pages call our functions, not Sanity directly. First with a Sanity implementation (no behaviour change), then a second implementation for the new backend.
-3. Migration script runs against staging, with a verified diff against Sanity.
-4. Human reviews the staging site visually (AGENTS.md visual sign-off).
-5. Production cutover is an S5 action: backup first, human go-ahead, point production at the new data source, keep Sanity read-only for a fixed period, then shut it down only on human approval.
-6. Webhook-based revalidation and draft preview get new equivalents. Never leave endpoints unauthenticated.
+**Rich text.** Payload's Lexical, stored as JSON. Rendering on the site goes through a mapper onto our Tailwind tokens. **Migration risk (accepted from Gemini)**: Portable Text uses spans with `markDefs`; Lexical uses nested nodes and formatting bitmasks. Inline images with captions and links do not map automatically, and a plain text hash will differ. The migration script therefore needs its own transformer, with a per-article report comparing plain text, link targets, image count and alt text, plus a visual check by the human.
 
-## 9. For Gemini: editor UI, rich text, API contract (to be written by the reviewer)
+**Images.** Replace Sanity's resize and blur placeholder with generated sizes (`sharp`) and a stored blur placeholder. **Focal point (accepted from Gemini)**: store `{x, y}` per image and add an editor control; the current hotspot/crop behaviour is something editors rely on and must not silently disappear. Enforce upload size limits and keep alt required when an image is set.
 
-Please add:
-- Your view of the editor needs for a non-technical writer (what must be effortless, what is dangerous).
-- Which rich-text editor and stored format you would choose and why.
-- The proposed API contract between backend and any custom UI (resources, fields, errors), if option A or a custom editor on top of B/C is chosen.
-- Anything in sections 1 to 8 you think is wrong. State it with evidence.
+**Editing safety (accepted from Gemini)**: autosave with a visible "saved" indicator, optimistic-concurrency check so two people do not silently overwrite each other, slug generated from the headline with conflict detection and a confirmation before changing a published slug, no raw HTML entry for writers. Payload's drafts and versions provide part of this; what it does not cover must be tested in the trial.
 
-## 10. Risks
+## 9. Trial (one day, before the decision)
+
+1. Check the Node version Coolify builds with; compare with Payload's requirement.
+2. Pick a stable Payload release; list what 4.0 changes.
+3. Stand up Payload plus Postgres as its own container on a **staging** subdomain, empty database, no production data.
+4. Test: writer draft-only role; scheduled publishing with the Jobs worker; email verification (needs a mail provider decision); focal point control; autosave and conflicts.
+5. Convert 3 of the 13 articles Portable Text to Lexical and diff them.
+6. Measure memory and disk on the VPS with CMS, Postgres and the site running together, and under an image upload.
+7. Report: pass or fail per item, and a revised recommendation.
+
+## 10. Roadmap
+
+| Phase | Content | Exit criteria |
+|---|---|---|
+| 0 | Owner decisions, trial (9), threat model | Stack accepted by the human |
+| 1 | CMS service, schema, roles, media, data seam, migration to staging, visual sign-off, backup and restore proof, production cutover (S5) | Live site reads from the new backend; Sanity read-only |
+| 2 | Reader accounts, email, search | Threat model reviewed; login tested |
+| 3 | Subscription tiers, paywall, metering, Stripe | Legal and tax check by the owner; webhook tests |
+
+## 11. API contract (from Gemini's section 9, kept as a starting point)
+
+Applies to custom UIs or app clients. If Payload is chosen, its REST API replaces most of this; the *behaviours* below remain requirements.
+- Auth: login sets an HttpOnly, SameSite session cookie; `GET /api/auth/me` returns role.
+- Articles: list with status, page, limit, search and category filters; create draft; update with `If-Match` version (409 on conflict); publish and unpublish for editors and admins only; publish validates alt text, category and hero image.
+- Media: multipart upload with `alt`, `caption`, `focalPoint`; returns dimensions, blur placeholder and sizes.
+- Errors: RFC 7807 problem details with field-level messages.
+
+## 12. Risks
 
 | Risk | Mitigation |
 |---|---|
-| Some third-party facts remain unverified; Payload main is a 4.0 beta | Resolve [verify] items and run the spike before deciding |
-| Payload's stated Node requirement may exceed what the VPS builds with | Check the Node version in Coolify first |
-| Running our own auth and storage | Threat model, vetted libraries, backups, restore test |
-| Admin and public site share a process (Payload embedded) | Separate deployment, or accept with the threat model |
-| Rich-text conversion loses content | Diff report, migrate while volume is small |
-| Single VPS is a single point of failure | Off-server backups, documented restore, later replica |
-| Scope creep (reader accounts, comments) | Out of scope for v1 |
+| Payload main is a 4.0 beta; Node requirement may exceed the VPS build | Trial step 1 and 2 |
+| Running our own auth, sessions and uploads | Threat model, vetted libraries, backups, restore test |
+| Single VPS capacity (site, CMS, Postgres, uploads) | Measure in trial; admin and public site isolated |
+| Single VPS is a single point of failure | Off-server backups, tested restore |
+| Rich-text conversion loses content | Own transformer, per-article report, human check, migrate while volume is small |
+| Paywall in a static site | Server-enforced body fetch (6) |
+| Money, tax and legal exposure from subscriptions | Owner decision before Phase 3 |
+| Scope creep (comments, mobile apps) | Deferred in 5 |
 
-## 11. Decisions needed from the human
+## 13. Decisions needed from the human
 
-| ID | Decision |
-|---|---|
-| Q6 | Stack and hosting: accept the recommendation (B on the VPS), choose another option, or ask for a spike first |
-| Q9 | Custom build (A) or self-hosted CMS (B or C) |
-| Q8 | Cutover length and how long Sanity stays read-only |
-| New | Image storage: volume or S3-compatible bucket (needs an account) |
-| New | Where off-server backups go (needs an account) |
+| ID | Decision | Recommendation |
+|---|---|---|
+| Q6/Q9 | Stack: custom or self-hosted CMS | Option B, staged, after the trial |
+| Q5 | Scope | Phases 1 to 3 as in 10; comments deferred |
+| New | Transactional email for password resets and invites | A free-tier provider or SMTP: needs an owner-created account; not chosen yet |
+| New | Off-server backup destination | Needs an account or your own computer; Cloudflare R2's free tier is one option, payment-method need unchecked |
+| Q8 | Cutover length; how long Sanity stays read-only | Parallel run, then read-only for 30 days |
+| New | Subscriptions: pursue, and who handles tax and legal | Decide before Phase 3 |
