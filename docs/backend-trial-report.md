@@ -24,7 +24,7 @@ The decision is the owner's (gate G0 in `docs/backend-plan.md`).
 | Task | Question | Result | Evidence |
 |---|---|---|---|
 | P0.1 | Node in Payload's range | **Pass** | Node 24.22.1; `npm install` shows no engine warning |
-| P0.2 | VPS capacity and Node version | **Not done** | Needs the owner's go-ahead for read-only SSH |
+| P0.2 | VPS capacity and Node version | **Done (read-only, run by the owner)** | 4 vCPU, 7.75 GB RAM (about 6.3 GB available), **no swap**, 75 GB disk (50 GB free), Ubuntu 24.04, Docker 29.7.2, Coolify 4.4.7. Running: site (58 MB), Coolify (423 MB), Coolify's own Postgres and Redis, proxy. Capacity is ample for site + CMS + Postgres. **The site builds with Node 22.19.0, below Payload's `^22.23.4 \|\| >=24.22.1`**, so the CMS container must pin its own Node version. Port check from outside: 80/443 open (correct), **8000 (Coolify admin, plain HTTP) and 6001 open to the internet**, 8080 closed |
 | P0.3 | Scaffold runs | **Pass** | Admin loads; `tsc` clean; `next build` passes |
 | P0.4 | Content model matches Sanity's | **Pass** | Articles, categories, topics, authors, media, newsletter subscribers, staff users |
 | P0.5 | Writer drafts only; editor publishes; public sees published only | **Pass** | 9 tests; refusals must be 403/404; a deliberately broken rule makes the suite fail |
