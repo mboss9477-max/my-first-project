@@ -29,6 +29,8 @@ The living record of **what was done** and **who tested it**. Updated by whoever
 
 | PR | What | Claude's checks | Gemini's checks | Blocking |
 |----|------|-----------------|-----------------|----------|
+| #18 | Publish webhook (task 1.10): CMS tells the website when content goes live | ✅ CMS 57 tests, web 30 tests, both `tsc` and builds clean; **real built website over HTTP**: no secret 401, wrong secret 401, right secret 200 with the expected paths, bad JSON 400, GET 405; secret check switched to always-pass makes the test fail; **found** that autosaving a live article looks identical to unpublishing it and fixed it by reading the stored live copy. ⚠️ CMS and website not yet tested talking to each other (needs staging) | ⏳ not yet requested | Gemini review, owner merge |
+| #17 | This checklist, and corrections to `AGENTS.md` (deploy is automatic; branch protection is on) | ✅ docs only; CI | ⏳ not yet reviewed | Gemini review |
 | #15 | Data seam stage 1: all content reads through `src/data` | ✅ tsc; 21 tests incl. guard test; build; route table unchanged; **36 of 36 prerendered pages identical** before and after | ⏳ Part B of the 2026-10-24 task | Gemini review, owner merge |
 | #14 | Gemini's CMS attack-test suite (cases a–n) | ✅ Review: 46 pass; cases l and m well built; **requested** two fixes (case n must require exactly 400; case j does not cover T22) | ➖ author. ⏳ addressing my review | Gemini fixes |
 | #11 | Writer walkthrough checklist | ✅ Review requested 10 accuracy fixes | ✅ Revised; ⏳ my re-check | Claude re-check |
@@ -51,7 +53,7 @@ The living record of **what was done** and **who tested it**. Updated by whoever
 | Phase | Done | Next | Waiting on |
 |-------|------|------|-----------|
 | 0: trial | P0.1–P0.8, P0.10, P0.11; G0 decided | P0.9 walkthrough (PR #11, in review) | Gemini |
-| 1: content backend | 1.7 data seam stage 1 (PR #15, in review); security items T1, T4 partly, T5 partly, T22 | 1.10 publish webhook; seam stage 2 (images, bodies); lint in CI | #15 merge; owner: database choice, staging go-ahead |
+| 1: content backend | 1.7 data seam stage 1 (PR #15, in review); 1.10 publish webhook (PR #18, in review); security items T1, T4 partly, T5 partly, T22 (merged, #16) | Seam stage 2 (images, bodies); lint in CI (after Gemini's lint-fix PR); CMS on Postgres and staging | #15 and #18 review and merge; owner: database choice, staging go-ahead |
 | 2: reader accounts and search | not started | | after G1 |
 | 3: subscriptions and paywall | not started | | after G2 and the owner's legal and tax check |
 
