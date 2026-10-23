@@ -104,6 +104,7 @@ Readers --> csnews.news (Next.js, static + ISR, as today)
 - **Design**: static pages carry only the headline, excerpt and a teaser. The full premium body is fetched on demand from an authenticated endpoint that checks the session and tier on the server. The body is never in the static HTML or the public cache. Enforcement is server-side; hiding content in the browser alone is not access control.
 - **Metering**: count views per signed-in reader on the server; anonymous metering by cookie is bypassable and is accepted as soft.
 - **Billing**: Stripe Checkout (hosted) and the customer portal keep card data off our servers; tier changes come only from verified webhook events. Stripe's pricing and the events we need were not fully verified **[verify]**. Stripe has no monthly fee by itself but charges per transaction; the owner must accept that, and no money moves until a legal and tax check is done (not an agent decision).
+- **Layout shift and SEO (Gemini review)**: fetching the body after load can shift the page and hide premium text from search engines. Mitigations to design in Phase 3: reserve space for the body so the page does not jump; mark gated sections with schema.org paywall structured data (`isAccessibleForFree: false` with a selector for the gated part, per Google's paywalled-content guidance **[verify]**); keep the server-rendered teaser substantial. Serving different content to crawlers than to readers is not acceptable.
 - **Not before**: reader accounts (Phase 2) and the threat model (7).
 
 ## 7. Security: threat model first (S16)
