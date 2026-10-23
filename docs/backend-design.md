@@ -6,7 +6,7 @@
 | **Reviewer** | Gemini (adds section 9: editor UI, rich text, API contract) |
 | **Decider** | The human owner |
 | **Status** | DRAFT for review. Nothing here is built or decided. |
-| **Evidence quality** | Section 3 facts about third-party tools come from web search summaries, not from reading each project's official docs. Each marked **[verify]** must be checked against official docs before a decision rests on it. |
+| **Evidence quality** | Section 3 facts were checked against each project's official docs and repos on 2026-10-23 (v0.2). Items still marked **[verify]** could not be confirmed and must be checked before a decision rests on them. Payload's `main` branch is a 4.0 beta, while the docs pages read were the 3.x docs, so behaviour may differ in 4.0. |
 
 ## 1. Goal and scope
 
@@ -52,14 +52,25 @@ Our own API and database plus our own editor UI.
 - We build and maintain: auth, roles, drafts and publishing workflow, rich-text editor integration, image upload and processing, media library, admin UI, validation, backups. This is months of work for two agents with one human reviewer, and the highest security risk.
 
 ### B. Self-host Payload CMS (code-first, embedded in Next.js)
-- Reported: embeds in the Next.js app, Postgres via Drizzle, Lexical-based rich text stored as JSON, access control defined in code (field-level possible), MIT licence, media on local disk by default or S3-compatible storage. **[verify all against payloadcms.com docs]**
-- Fits our stack (Next.js, TypeScript). Gives an admin panel with roles and drafts, so we write schema and access rules instead of an editor.
-- Risks: it would run inside our web app, so an admin-side flaw shares a process with the public site unless deployed separately **[verify the supported separate-deploy option]**. Version and Next 16 compatibility must be confirmed. Learning curve is reported as steeper than UI-first tools.
+Verified in official docs ([installation](https://payloadcms.com/docs/getting-started/installation), [database](https://payloadcms.com/docs/database/overview), [migrations](https://payloadcms.com/docs/database/migrations), [rich text](https://payloadcms.com/docs/rich-text/overview), [drafts](https://payloadcms.com/docs/versions/drafts), [uploads](https://payloadcms.com/docs/upload/overview)):
+- MIT licence (package.json; the root LICENSE URL returned 404).
+- Installs into an existing Next.js app. Supported Next versions include **16.2.6 and later**; this repo is on 16.3.1.
+- **Node requirement is stated inconsistently**: docs say `^22.23.4 || >=24.22.1`, `packages/payload` engines say `>=24.22.1`. Our repo says Node >= 20. The server's Node version must be checked.
+- Postgres via Drizzle (`@payloadcms/db-postgres`). Migrations are committed SQL files in `src/migrations`; development uses push mode by default, so we must forbid push against production (S18).
+- Rich text: Lexical by default, stored as Lexical JSON. Slate is deprecated and removed in 4.0.
+- Access functions per operation. A role can create drafts and be blocked from publishing (docs example restricts updates to `_status: draft`). Scheduled publishing exists (`schedulePublish`) but needs a Jobs queue running.
+- Uploads: local disk by default, `sharp` for resizing, S3-compatible adapter available and recommended for Node hosts.
+- Separate admin deployment: **not stated in the docs read [verify]**. A remote REST/GraphQL API and a beta SDK exist, but the admin is served by `@payloadcms/next` inside a Next app, so the admin sharing a process with the public site is the likely default.
+- Memory sizing guidance was not found [verify]. Concurrent uploads multiply memory use.
+- The `main` branch is a **4.0 beta**. We must choose a stable version and check what 4.0 changes before building.
+
+Fits our stack. Gives an admin panel with roles and drafts, so we write schema and access rules instead of an editor. Learning curve is reported as steeper than UI-first tools (reviewer opinion, not verified).
 
 ### C. Self-host Directus or Strapi
-- Reported: Directus wraps an existing SQL database and is MIT-licensed; Strapi owns its schema and has the largest community; Strapi's licence terms were not confirmed. **[verify]**
-- Run as a separate service, which isolates the admin from the public site. The admin UIs are friendlier for non-technical users than Payload's, per reviews, but this is opinion.
-- We would still write the data layer and migration, and deal with a second service in Coolify.
+Verified in official sources ([Strapi LICENSE](https://github.com/strapi/strapi/blob/main/LICENSE), [Strapi docs](https://docs.strapi.io/cms/intro), [Directus licence](https://github.com/directus/directus/blob/main/license), [Directus pricing](https://directus.com/pricing)):
+- **Strapi**: Community Edition is MIT, but code in `ee/` directories is under a separate Enterprise licence. Postgres supported (14+). Per-action permissions including publish exist on the free tier (RBAC page, **confirm on the Draft & Publish page [verify]**). **Review Workflows and Audit Logs require an Enterprise plan; Releases and Content History require a paid Growth plan.** Scheduled publishing not confirmed. Rich-text format not confirmed [verify].
+- **Directus**: **not MIT.** It uses the Monospace Sustainable Core License 1.0, which allows internal use and bars "Competing Use", and converts to GPL-3.0 four years after release. The free core tier needs no licence key, and organisations under $5M revenue and 50 employees can get a free "Open Innovation Grant". The free tier lists "Advanced RBAC", but whether a draft-only writer role works is **not verified**. Rich text is stored as HTML. Minimum 512 MB, recommended 2 vCPU / 2 GB. Docker required. Postgres supported.
+- Both run as separate services, which isolates the admin from the public site. We would still write the data layer and migration and deal with a second service in Coolify. Claims that their admin UIs are friendlier for non-technical users are reviewer opinion only.
 
 ### Comparison
 
@@ -69,12 +80,12 @@ Our own API and database plus our own editor UI.
 | Fits current Next.js code | Yes | Best | Via REST/GraphQL |
 | Admin isolated from public site | Yes | Only if deployed separately | Yes |
 | Security surface we own | Largest | Medium | Medium |
-| Lock-in | None | Low (open source, Postgres) | Low |
+| Lock-in | None | Low (MIT, Postgres) | Low to medium (Directus licence is source-available; Strapi Enterprise features are paid) |
 | Needs human-created third-party accounts | None | None if self-hosted | None if self-hosted |
 | Ongoing patching burden | Ours | Ours (upstream releases) | Ours (upstream releases) |
 
 ### Recommendation (for the human to accept or reject)
-Lean **B (Payload, self-hosted on the existing VPS with Postgres)**, pending the [verify] items and a one-day spike. It keeps our stack and gives a real editor without us writing one, which is the largest single cost in option A. **If the owner's intent is a fully bespoke backend regardless of cost, A is possible but should be built in stages on top of this same design** (data seam, migration scripts, API contract).
+Lean **B (Payload, self-hosted on the existing VPS with Postgres)**, pending the remaining [verify] items and a one-day spike. It keeps our stack, is plain MIT, and gives a real editor without us writing one, which is the largest single cost in option A. The checked facts weaken C: Strapi puts review workflows behind Enterprise, and Directus's licence is source-available rather than MIT. Spike goals: confirm the Node version and stable Payload release that work with our Next 16.3.1 on Coolify, test the writer draft-only role, test Portable Text to Lexical conversion on the 13 articles, and measure memory on the VPS. **If the owner's intent is a fully bespoke backend regardless of cost, A is possible but should be built in stages on top of this same design** (data seam, migration scripts, API contract).
 
 ## 4. Hosting and data
 
@@ -120,7 +131,8 @@ Please add:
 
 | Risk | Mitigation |
 |---|---|
-| Third-party facts here are unverified | Verify against official docs before the decision |
+| Some third-party facts remain unverified; Payload main is a 4.0 beta | Resolve [verify] items and run the spike before deciding |
+| Payload's stated Node requirement may exceed what the VPS builds with | Check the Node version in Coolify first |
 | Running our own auth and storage | Threat model, vetted libraries, backups, restore test |
 | Admin and public site share a process (Payload embedded) | Separate deployment, or accept with the threat model |
 | Rich-text conversion loses content | Diff report, migrate while volume is small |
