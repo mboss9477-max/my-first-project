@@ -73,9 +73,10 @@ describe('scheduled publishing', () => {
     expect(await statusOf(article.id)).not.toBe('published')
   })
 
-  it('a writer cannot publish by scheduling: the job runs with the writer’s rights and is refused', async () => {
+  it('a writer cannot publish by scheduling: the schedule is refused when queued (T22)', async () => {
     const article = await draftBy(writer, 'scheduled-by-writer')
-    await schedulePublish(writer, article.id, past())
+    // Before the jobs guard this queued fine and was only refused when it ran.
+    await expect(schedulePublish(writer, article.id, past())).rejects.toMatchObject({ status: 403 })
     await payload.jobs.run({ queue: 'default' })
     expect(await statusOf(article.id)).not.toBe('published')
   })
