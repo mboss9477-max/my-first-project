@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CategoryNav } from "@/components/CategoryNav";
 import { SiteMenu } from "@/components/SiteMenu";
 import { TextSizeControl } from "@/components/TextSizeControl";
+import { mastheadDate } from "@/lib/format";
 import { SITE_NAME } from "@/lib/site";
 import { client } from "@/sanity/client";
 import {
@@ -12,14 +13,6 @@ import {
   type Category,
   type Topic,
 } from "@/sanity/queries";
-
-/** e.g. "Monday August 17 2026" — built explicitly to keep month-before-day. */
-function mastheadDate() {
-  const now = new Date();
-  const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
-  const month = now.toLocaleDateString("en-US", { month: "long" });
-  return `${weekday} ${month} ${now.getDate()} ${now.getFullYear()}`;
-}
 
 export async function SiteHeader() {
   const [categories, trending] = await Promise.all([

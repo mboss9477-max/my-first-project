@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 
 import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { siteYear } from "@/lib/format";
 import { SITE_NAME } from "@/lib/site";
 import { client } from "@/sanity/client";
 import { ALL_CATEGORIES_QUERY, type Category } from "@/sanity/queries";
@@ -193,7 +194,7 @@ export async function SiteFooter() {
         </div>
 
         <p className="mt-10 text-xs text-ink-soft">
-          © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
+          © {siteYear()} {SITE_NAME}. All rights reserved.
         </p>
       </div>
     </footer>
