@@ -20,7 +20,7 @@
 7. External asset storage for high-resolution images and videos.
 8. Full-text search by keyword, date, author.
 
-**Constraint: the budget is very low. No paid subscriptions except the VPS.** Everything below is chosen to cost nothing beyond the VPS unless it is explicitly marked as a decision. Payment processing necessarily takes per-transaction fees when real money moves; see 6.
+**Constraint: build first with no paid subscriptions except the VPS. Spending is conditional.** The owner will invest money if the backend reaches the required quality, so paid items (object storage, a mail provider, managed backups, a bigger VPS) are not ruled out; they are *gated*. Nothing is bought until the Phase 1 quality gate in section 10 is passed and the owner approves each item. Everything below is chosen to cost nothing beyond the VPS until then, unless it is explicitly marked as a decision. Payment processing necessarily takes per-transaction fees when real money moves; see 6.
 
 **Standing requirements**: the live site keeps working throughout and Sanity runs until the human approves its shutdown; static generation and 60 s revalidation stay (AGENTS.md S7); verified restorable backup before any migration (S16); migrations are committed files (S18); no secrets in the repo (S1); passwords hashed with a vetted algorithm (S16).
 
@@ -133,9 +133,11 @@ Required before any login goes live: `docs/threat-model.md` (Claude drafts, Gemi
 | Phase | Content | Exit criteria |
 |---|---|---|
 | 0 | Owner decisions, trial (9), threat model | Stack accepted by the human |
-| 1 | CMS service, schema, roles, media, data seam, migration to staging, visual sign-off, backup and restore proof, production cutover (S5) | Live site reads from the new backend; Sanity read-only |
+| 1 | CMS service, schema, roles, media, data seam, migration to staging, visual sign-off, backup and restore proof, production cutover (S5) | **Quality gate** (below), then live site reads from the new backend; Sanity read-only |
 | 2 | Reader accounts, email, search | Threat model reviewed; login tested |
 | 3 | Subscription tiers, paywall, metering, Stripe | Legal and tax check by the owner; webhook tests |
+
+**Phase 1 quality gate (the point at which the owner may invest).** All must be true on staging: (1) a non-technical writer completes create, edit, add image, save draft and submit for review without help; (2) an editor publishes and the live page updates within 60 s; (3) the 13 articles migrated with a clean per-article report and the owner's visual sign-off; (4) a backup was restored successfully on a clean machine; (5) typecheck, build and tests pass in CI; (6) the threat model items marked for Phase 1 are done; (7) the CMS and the public site were measured together on the VPS under an image upload without the public site degrading. Only after this gate does the owner decide on paid items.
 
 ## 11. API contract (from Gemini's section 9, kept as a starting point)
 
