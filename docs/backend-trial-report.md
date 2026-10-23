@@ -7,11 +7,13 @@
 | **Date** | 2026-10-23 |
 | **Code** | `news-site/cms` on branch `claude/cms-trial`, PR #9 |
 | **Scope** | Local machine only. SQLite file database. No production data, no VPS, no Sanity writes. |
-| **Status** | Draft. Pending: Gemini's independent review and adversarial tests, the writer walkthrough, and the VPS audit (needs the owner's go-ahead). |
+| **Status** | Reviewed by Gemini; owner chose GO (G0). Still pending: the writer walkthrough and the VPS audit (needs the owner's go-ahead). |
 
 ## 1. Verdict
 
 **Recommendation: GO for Payload CMS 3.92.0 as a separate app, subject to the open items in section 4.**
+
+**Owner decision (gate G0), 2026-10-23: GO with Payload.** Article dates will use UK time (`Europe/London`).
 
 Every blocking question we could answer locally came back positive: roles hold, publishing is protected even through scheduling, the real articles convert without loss, images behave, and the production path works with committed migrations. Nothing found so far argues for a fully custom build.
 
@@ -30,10 +32,10 @@ The decision is the owner's (gate G0 in `docs/backend-plan.md`).
 | P0.7 | Images: sizes, focal point, limits | **Pass** | 6 tests: 400/768/1600 sizes, focal point stored, alt required, HTML and fake JPEG refused; 17.2 MB 24 MP photo in ~0.6 s, ~50 MB extra memory on the dev PC |
 | P0.8 | Rich text converts without loss | **Pass** | Converter plus 7 tests; live dry run **13/13 articles identical, 0 warnings** |
 | P0.9 | Writer walkthrough checklist | **Gemini, pending** | |
-| P0.10 | Independent review of the trial | **Gemini, pending** | Adversarial cases a to h issued |
+| P0.10 | Independent review of the trial | **Done, one finding fixed** | Gemini ran 8 adversarial cases: 7 refused as expected; **case c failed** (any writer could read other writers' draft versions). Fixed in `ee54411` together with the same leak on direct reads, which Claude found while fixing; regression tests failed before the fix and pass after |
 | P0.11 | This report | Draft | |
 
-Totals at commit `49bf077`: **27 tests pass, 1 opt-in skipped**, `tsc` clean, production build passes. Rechecked from a clean checkout (fresh `npm ci`): generated files had no drift, tests passed twice and under a US time zone, and the dry run passed.
+Totals at commit `ee54411`: **30 tests pass, 1 opt-in skipped**. Earlier recheck at `49bf077` (27 tests): `tsc` clean, production build passes. Rechecked from a clean checkout (fresh `npm ci`): generated files had no drift, tests passed twice and under a US time zone, and the dry run passed.
 
 ## 3. Findings (things we would not have known without the trial)
 
@@ -63,7 +65,7 @@ Totals at commit `49bf077`: **27 tests pass, 1 opt-in skipped**, `tsc` clean, pr
 cd news-site/cms
 npm ci
 # create .env from .env.example with your own long random PAYLOAD_SECRET
-npm test                                  # expect 27 passed, 1 skipped
+npm test                                  # expect 30 passed, 1 skipped
 npx tsc --noEmit                          # expect no output
 npm run build                             # expect "Compiled successfully"
 # live dry run (read-only, needs internet):
