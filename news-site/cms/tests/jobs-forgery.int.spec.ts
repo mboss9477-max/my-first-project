@@ -1,9 +1,9 @@
-import { rmSync } from 'fs'
 import { REST_GET, REST_POST } from '@payloadcms/next/routes'
 import { createLocalReq, getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /**
  * Gemini's review of PR #16 (probe b): a writer names an editor in a job's
@@ -36,8 +36,7 @@ const forgedJob = (userId: number) => ({
 })
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-forgery-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-forgery-test.db'
+  await useTestDatabase('forgery')
   config = await getConfig()
   payload = await getPayload({ config })
   writer = await makeUser('writer@example.test', 'writer')

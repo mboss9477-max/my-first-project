@@ -1,7 +1,7 @@
 import { convertLexicalToPlaintext } from '@payloadcms/richtext-lexical/plaintext'
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { useTestDatabase } from './helpers/testDatabase'
 
 import {
   normaliseText,
@@ -90,8 +90,7 @@ describe('Payload accepts converted bodies', () => {
   let categoryId: number
 
   beforeAll(async () => {
-    for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-pt-test.db${suffix}`, { force: true })
-    process.env.DATABASE_URL = 'file:./cms-pt-test.db'
+    await useTestDatabase('portable-text')
     const { default: config } = await import('../src/payload.config')
     payload = await getPayload({ config })
     categoryId = (await payload.create({ collection: 'categories', data: { name: 'News', slug: 'news' } })).id
