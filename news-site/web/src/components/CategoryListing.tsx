@@ -3,17 +3,12 @@ import { notFound } from "next/navigation";
 import { ArticleRow } from "@/components/ArticleRow";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Pagination } from "@/components/Pagination";
+import { getCategoryPage } from "@/data";
 import { PAGE_SIZE } from "@/lib/pagination";
-import { client } from "@/sanity/client";
-import { CATEGORY_QUERY, type CategoryWithArticles } from "@/sanity/queries";
 
 export function getCategory(slug: string, page: number) {
   const from = (page - 1) * PAGE_SIZE;
-  return client.fetch<CategoryWithArticles | null>(CATEGORY_QUERY, {
-    slug,
-    from,
-    to: from + PAGE_SIZE,
-  });
+  return getCategoryPage(slug, from, from + PAGE_SIZE);
 }
 
 /** Shared body for /category/[slug] and /category/[slug]/page/[page]. */
