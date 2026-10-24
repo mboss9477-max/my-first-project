@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
-import { urlForImage } from "@/sanity/image";
+import { imageUrl } from "@/data/image";
 import type { ArticleListItem } from "@/data";
 
 type RowArticle = ArticleListItem & { placeholderImage?: string };
@@ -24,7 +24,7 @@ export function ArticleRow({
   const date = formatDate(article.publishedAt);
 
   const thumb = article.heroImage
-    ? urlForImage(article.heroImage).width(320).height(240).fit("crop").url()
+    ? imageUrl(article.heroImage, { width: 320, height: 240 })
     : article.placeholderImage;
 
   return (
