@@ -37,7 +37,7 @@ Status: ✅ done, 🔄 in progress, ⏳ not started, ❓ must be checked.
 | 0.2 | `docs/PROJECT_CONTEXT.md`, `decisions.md`, `history.md`, `README.md` (docs map) covering 16 Aug onward | Claude, Gemini reviews | 🔄 |
 | 0.3 | Refresh stale `README.md`, `CHANGELOG.md`, `ISSUES.md` | Claude, Gemini reviews | ⏳ |
 | 0.4 | Update `AGENTS.md`: merge rule, owner's working rules, "read first" list | Claude, Gemini reviews | ⏳ |
-| 0.5 | Notion page with the whole plan | Claude | ⏳ |
+| 0.5 | Notion page with the whole plan (created 2026-10-24, private to the owner; Claude re-syncs it at each milestone and handoff) | Claude | ✅ |
 | 0.6 | **Cold-start test:** a fresh Gemini session, given only the repo, answers 8 questions about decisions and rules correctly | Gemini | ⏳ |
 
 Acceptance: `main` contains every document above; `gh pr list` shows no stale PRs; the cold-start test passes.
@@ -50,7 +50,7 @@ Acceptance: `main` contains every document above; `gh pr list` shows no stale PR
 | 1.2 | Security items: schedule guard, lockout, sessions, CSRF origin | Claude | ✅ |
 | 1.3 | Postgres: adapter, migrations, CI job on Postgres 17 | Claude | ✅ |
 | 1.4 | Publish webhook (CMS tells the website to refresh) | Claude | ✅ |
-| 1.5 | Data seam, stage 1 (all content reads behind one layer) | Claude | 🔄 (PR #15) |
+| 1.5 | Data seam, stage 1 (all content reads behind one layer) | Claude | ✅ (merged, PR #15) |
 | 1.6 | **Staging** on the server: Postgres and CMS containers on their own subdomain, memory limits, swap, env var names only | Claude with owner | ⏳ needs owner OK per step |
 | 1.7 | **Cloudflare Access** in front of the CMS admin (verify free-tier limits first) | Owner with Claude | ⏳ |
 | 1.8 | Data seam stage 2: images and article bodies become CMS-neutral | Claude | ⏳ |
