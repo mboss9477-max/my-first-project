@@ -1,4 +1,3 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -6,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { MAX_UPLOAD_BYTES } from '../src/collections/uploadRules'
 import { slugify } from '../src/collections/slug'
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /** Slug generation, review status and friendly upload rules (gaps found in Gemini's walkthrough). */
 let payload: Payload
@@ -23,8 +23,7 @@ async function refusal(call: Promise<unknown>) {
 }
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-workflow-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-workflow-test.db'
+  await useTestDatabase('workflow')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
   const make = (email: string, role: 'editor' | 'writer') =>
