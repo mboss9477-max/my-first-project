@@ -9,8 +9,10 @@ import pg from 'pg'
  * - Default: a throwaway SQLite file in the CMS folder (fast, no setup).
  * - With TEST_DATABASE_URL set to a Postgres address (any database on that
  *   server, with permission to create databases): a fresh Postgres database
- *   named cms_test_<name>. CI and `npm run test:postgres` use this, so the
- *   same tests run on the database that production uses.
+ *   named cms_test_<name>. CI's "Test on Postgres (cms)" job does this, and you
+ *   can too: set TEST_DATABASE_URL and run plain `npm test` (there is no
+ *   separate script). The same tests then run on the database that production
+ *   uses.
  *
  * @param {string} name short name of the test file, letters, digits, dashes
  * @returns {Promise<'postgres' | 'sqlite'>} which database the file will use
