@@ -56,6 +56,10 @@ describe("POST /api/revalidate-cms", () => {
     expect((await call({ raw: "not json" })).status).toBe(400);
     expect((await call({ body: {} })).status).toBe(400);
     expect((await call({ body: { type: 7 } })).status).toBe(400);
+    // Valid JSON that is not an object (found by Gemini's review: `null` crashed with a 500).
+    for (const raw of ["null", "[]", "[1,2]", '"text"', "42", "true"]) {
+      expect((await call({ raw })).status, `body ${raw}`).toBe(400);
+    }
     expect((await call({ raw: JSON.stringify({ type: "article", pad: "x".repeat(3000) }) })).status).toBe(413);
     expect(revalidatePath).not.toHaveBeenCalled();
   });
