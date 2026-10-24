@@ -54,11 +54,33 @@ Acceptance: `main` contains every document above; `gh pr list` shows no stale PR
 | 1.6 | **Staging** on the server: Postgres and CMS containers on their own subdomain, memory limits, swap, env var names only | Claude with owner | ⏳ needs owner OK per step |
 | 1.7 | **Cloudflare Access** in front of the CMS admin (verify free-tier limits first) | Owner with Claude | ⏳ |
 | 1.8 | Data seam stage 2: images and article bodies become CMS-neutral | Claude | ⏳ |
-| 1.9 | Site reads from the CMS behind a switch; migration of all content and images with a per-article report | Claude | ⏳ |
+| 1.8a | **Language-readiness spike (before any content is migrated):** decide and test whether the new CMS is ready for several languages with only English filled in (Payload localization). Retrofitting languages after content is migrated is costly, so this comes first. Output: `docs/localization-spike.md` with a go / no-go, the list of fields that become per-language, and a decision-log line. Test list in the section below | Claude | ⏳ owner decides timing (question ML-1) |
+| 1.9 | Site reads from the CMS behind a switch; migration of all content and images with a per-article report | Claude | ⏳ (blocked on 1.8a for the migration rehearsal on staging; the script and switch are built) |
 | 1.10 | Editor experience: branding and admin changes from `docs/editor-ux.md` | Gemini, owner signs off visually | ⏳ |
 | 1.11 | Backups: nightly encrypted dump and media copy to off-server storage, **restore proven on a clean machine** | Claude with owner (account) | ⏳ |
 | 1.12 | **Quality gate G1** (see `backend-plan.md`): a non-technical writer publishes unaided, live page updates within 60 s, all articles migrated cleanly, restore proven, CI green, site and CMS measured together | Owner decides | ⏳ |
 | 1.13 | **Cutover**, with rollback plan; Sanity read-only for 30 days, shut down only on the owner's approval | Claude with owner | ⏳ |
+
+#### Task 1.8a in detail: is the CMS language-ready?
+**Why now:** in a CMS with several languages, text fields such as the headline and body are stored once per language. Turning that on after hundreds of articles exist means moving every stored value into new per-language storage, with the live site reading it. Doing it before the first migration costs a few days; doing it after costs a data migration on live content.
+
+**What is tested (a throwaway branch and a local database, never the server):** Payload localization switched on with English as the only language that has content, and the other languages (Spanish, Mandarin, Arabic) configured but empty.
+
+| # | Question | Pass when |
+|---|----------|-----------|
+| 1 | Which fields are per-language? (headline, slug, excerpt, body, image alt text and caption, category, topic and author names and bios) | A written list with a reason for each; shared fields (dates, featured, relations) stay shared |
+| 2 | Does an English-only article behave exactly as today in the admin and the public API? | The existing CMS tests pass unchanged; the website in CMS mode builds with identical page text |
+| 3 | Can a language be **published separately** from English? (Payload's per-language publish status is labelled beta) | Publishing English leaves an unfinished Spanish draft unpublished; unpublishing one language leaves the others up. If not reliable, record the workaround |
+| 4 | What does the public API return for a language with no translation? | Fallback to English is switchable per request; the data layer can tell "translated" from "fallen back" (needed for hreflang and the switcher) |
+| 5 | Are slugs unique per language, and can a translated article have its own address? | Two languages may share or differ in slug without a clash; a duplicate within one language is refused |
+| 6 | Does the rich-text body localize per language, including images inside it? | A Lexical body saved per language reads back per language |
+| 7 | **The retrofit question:** with data already stored the old way, what does turning localization on cost? | Measured: either Payload moves it safely, or a data migration is needed. This is the reason the spike precedes the migration |
+| 8 | Do the **migration script** and the **data layer** (`news-site/web/src/data`) need a language argument, and how big is the change? | A list of changes and an estimate; ideally the default language keeps today's calls unchanged |
+| 9 | Does the **translator** role work: can it save a draft translation but not publish, and can it be limited to some languages? | Tests like the existing writer tests: a translator cannot publish; a reviewer approval is recorded; an editor publishes |
+| 10 | Does the admin work for right-to-left editing (Arabic text in the editor, and the admin in Arabic)? | Arabic text can be typed and saved correctly; the result and any gaps are recorded (full Arabic support remains its own phase, task 6.8) |
+| 11 | Do the database migrations stay committed and reviewable (S18) with localization on, and does CI on Postgres pass? | `npm run migrate` on an empty Postgres reproduces the schema |
+
+**Output:** `docs/localization-spike.md` (what was tested, results, a go or no-go, and if go the exact config), a decision-log line, and, if go, a PR turning localization on with English only, behind the existing tests. The owner decides after reading it; no content is migrated until then.
 
 ### M2: Launch-ready essentials (from the owner's 2026-08-29 checklist)
 
@@ -90,11 +112,27 @@ Needs a mail provider (owner account). Postgres full-text search with typo toler
 ### M5: Subscriptions and paywall (backend plan Phase 3)
 Only after the owner has taken legal and tax advice. Payment test mode first. Premium text never appears in static pages. Gate G3.
 
-### M6: Multilingual
+### M6: Multilingual (language editions and a translator desk, in the style of Anadolu Agency)
 Spanish and Mandarin through DeepL with **mandatory human review before publish**; Arabic as its own phase (right-to-left editor and site, Azure or LLM translation reviewed by an Arabic-competent human). Vendor choices are settled (see `decisions.md`).
 
+**When:** after launch, by the owner's earlier decision, but the CMS is made language-ready **before** content is migrated (task 1.8a). The owner is asked whether languages are wanted at launch or first thing after (question ML-1 below); the answer may move M6, but not 1.8a.
+
+| ID | Task | Owner | Status |
+|----|------|-------|--------|
+| 6.1 | **Translator role** and workflow in the CMS: a translator drafts translations and **cannot publish**; a human reviewer who reads the language approves; an editor publishes. Per-language review status on each article (machine draft, translated, reviewed, published). Who the reviewer is for each language is the owner's choice | Claude (roles, hooks), Gemini (desk UI) | ⏳ after 1.8a |
+| 6.2 | Translator desk: a view of English stories waiting for a translation into a language, the translation draft beside the source, and the review queue | Gemini (UI), Claude (data) | ⏳ |
+| 6.3 | Language editions: the URL structure (for example `/es/...`), pages, feeds and navigation per language; falling back to English only where a story is not translated, and saying so | Claude (routes, data), Gemini (UI) | ⏳ |
+| 6.4 | **hreflang:** every translated page links to its other-language versions (and to itself) so search engines show the right edition; `x-default` points to English | Claude | ⏳ |
+| 6.5 | **Per-language sitemaps** (and a news sitemap per language where Google News applies); the feed per language | Claude | ⏳ |
+| 6.6 | **The real language switcher:** replaces today's `EN` placeholder in the utility bar; shows only languages the current page exists in, and remembers the choice without a popup (owner rule) | Gemini (UI), Claude (data) | ⏳ |
+| 6.7 | Machine translation hookup (DeepL for Spanish and Mandarin) feeding drafts only; no unpublished text goes to a vendor without the owner's approval of that vendor, and the data flow is added to the threat model | Claude | ⏳ |
+| 6.8 | Arabic: right-to-left site and editor, tested with an Arabic-competent human; Arabic ships as its own phase | Claude, Gemini | ⏳ |
+| 6.9 | Fonts, dates, numbers and reading time per language (the site formats dates in UK time today) | Gemini, Claude | ⏳ |
+
+**Open question for the owner, ML-1:** multilingual at launch, or first thing after launch? Recommendation: first thing after. English launches on schedule; because 1.8a makes the CMS language-ready now, adding a language later means turning it on and filling content, not rebuilding. Launching with languages needs reviewers lined up for each language before day one.
+
 ### M7: Launch day and after
-Checklist: backup restore re-proved; monitoring alerts tested; rollback rehearsed; owner's final visual pass on key pages; DNS and SSL healthy; announcement; first-week watch (errors, speed, signups). Post-launch: series and collections, curated nav, social accounts, language switcher.
+Checklist: backup restore re-proved; monitoring alerts tested; rollback rehearsed; owner's final visual pass on key pages; DNS and SSL healthy; announcement; first-week watch (errors, speed, signups). Post-launch: series and collections, curated nav, social accounts (the language switcher is now task 6.6 in M6).
 
 ## 4. Open decisions for the owner
 1. Mail provider for password resets and reader accounts (needed by M4; free tier first).
