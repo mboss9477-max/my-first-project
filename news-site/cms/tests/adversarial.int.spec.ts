@@ -302,8 +302,11 @@ describe('CMS Adversarial Access Suite (Cases a-n)', () => {
     )
   })
 
-  // Case j: writer reads or deletes payload-jobs (threat model T22)
-  it('Case j1: writer cannot read payload-jobs (threat model T22)', async () => {
+  // Case j: jobs collection access (note: does not close threat model T22)
+  // This verifies access control on the payload-jobs collection directly via the Local API;
+  // it does NOT close threat model T22, which concerns Payload's admin schedule-cancel path
+  // running with full privileges.
+  it('Case j1: jobs collection access - writer cannot read payload-jobs', async () => {
     await expectDenied(
       payload.find({
         collection: 'payload-jobs',
@@ -312,7 +315,7 @@ describe('CMS Adversarial Access Suite (Cases a-n)', () => {
     )
   })
 
-  it('Case j2: writer cannot delete payload-jobs (threat model T22)', async () => {
+  it('Case j2: jobs collection access - writer cannot delete payload-jobs via collection API', async () => {
     const job = await payload.jobs.queue({
       task: 'schedulePublish',
       waitUntil: new Date(Date.now() + 3600000),
@@ -409,6 +412,6 @@ describe('CMS Adversarial Access Suite (Cases a-n)', () => {
         (err: unknown) => err as { status?: number; name?: string; message?: string },
       )
     expect(error, 'malicious image upload must be refused').not.toBeNull()
-    expect([400, 403, 404, 500], `${error?.name}: ${error?.message}`).toContain(error?.status ?? 400)
+    expect(error?.status, `${error?.name}: ${error?.message}`).toBe(400)
   })
 })
