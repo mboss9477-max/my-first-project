@@ -143,9 +143,13 @@ export interface Article {
   id: number;
   headline: string;
   /**
-   * URL part. Changing it after publishing breaks existing links.
+   * The web address of the story. Filled in from the headline if left empty; it is never changed automatically after that. Changing it after publishing breaks existing links.
    */
-  slug: string;
+  slug?: string | null;
+  /**
+   * Writers: set to "Ready for review" when the draft is finished. Editors publish.
+   */
+  reviewStatus?: ('writing' | 'ready' | 'changes') | null;
   /**
    * One or two sentences. Shown on cards, search results and social shares.
    */
@@ -249,7 +253,7 @@ export interface Topic {
 export interface Media {
   id: number;
   /**
-   * Describes the image for screen readers and when it fails to load.
+   * Describe what is in the photo for readers who cannot see it. Accepted: JPG, PNG, WebP or AVIF under 25 MB. iPhone photos: export as JPEG first.
    */
   alt: string;
   /**
@@ -526,6 +530,7 @@ export interface PayloadMigration {
 export interface ArticlesSelect<T extends boolean = true> {
   headline?: T;
   slug?: T;
+  reviewStatus?: T;
   excerpt?: T;
   author?: T;
   byline?: T;

@@ -1,6 +1,8 @@
-import type { Access, CollectionConfig, Where } from 'payload'
+import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
 import { hasRole, isEditorOrAdmin } from '../access/roles'
+import { notifyAfterArticleChange, notifyAfterArticleDelete } from '../hooks/notifyWeb'
+import { SLUG_PATTERN, slugify } from './slug'
 
 /**
  * Public sees published articles only. Editors and admins see everything.
@@ -57,7 +59,7 @@ export const Articles: CollectionConfig = {
   slug: 'articles',
   admin: {
     useAsTitle: 'headline',
-    defaultColumns: ['headline', 'category', '_status', 'publishedAt'],
+    defaultColumns: ['headline', 'category', 'reviewStatus', '_status', 'publishedAt'],
   },
   access: {
     read: readArticles,
@@ -74,6 +76,8 @@ export const Articles: CollectionConfig = {
     },
   },
   hooks: {
+    afterChange: [notifyAfterArticleChange],
+    afterDelete: [notifyAfterArticleDelete],
     beforeChange: [
       ({ req, operation, data }) => {
         // Record who created the article; used for writer ownership.
@@ -89,10 +93,59 @@ export const Articles: CollectionConfig = {
     {
       name: 'slug',
       type: 'text',
-      required: true,
       unique: true,
       index: true,
-      admin: { description: 'URL part. Changing it after publishing breaks existing links.' },
+      admin: {
+        description:
+          'The web address of the story. Filled in from the headline if left empty; it is never changed automatically after that. Changing it after publishing breaks existing links.',
+      },
+      hooks: {
+        // Field validation is skipped for drafts, so normalise here instead:
+        // a typed slug is cleaned up ("Bad Slug!" -> "bad-slug"), an empty one
+        // is filled from the headline. Only empty slugs are generated, so a
+        // later headline edit never moves a URL.
+        beforeValidate: [
+          ({ value, siblingData }) => {
+            const typed = typeof value === 'string' ? slugify(value) : ''
+            if (typed) return typed
+            const headline = typeof siblingData?.headline === 'string' ? siblingData.headline : ''
+            return headline ? slugify(headline) || undefined : undefined
+          },
+        ],
+      },
+      validate: (value: string | null | undefined, { data }: { data: Partial<{ _status: string }> }) => {
+        if (!value) return data?._status === 'published' ? 'A web address (slug) is needed before publishing.' : true
+        return SLUG_PATTERN.test(value)
+          ? true
+          : 'Use lowercase letters, numbers and single hyphens only, e.g. "council-approves-cycle-lanes".'
+      },
+    },
+    {
+      name: 'reviewStatus',
+      type: 'select',
+      defaultValue: 'writing',
+      options: [
+        { label: 'Writing', value: 'writing' },
+        { label: 'Ready for review', value: 'ready' },
+        { label: 'Changes requested', value: 'changes' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Writers: set to "Ready for review" when the draft is finished. Editors publish.',
+      },
+      hooks: {
+        // A hook, not `validate`: Payload skips validation on draft saves.
+        // Writers hand a draft over or take it back; only editors request
+        // changes. A writer may keep saving an article already in that state.
+        beforeChange: [
+          ({ value, originalDoc, req }) => {
+            if (value === 'changes' && hasRole(req.user, 'writer') && originalDoc?.reviewStatus !== 'changes') {
+              throw new APIError('Only an editor can mark an article as "Changes requested".', 403, undefined, true)
+            }
+            return value
+          },
+        ],
+      },
     },
     {
       name: 'excerpt',

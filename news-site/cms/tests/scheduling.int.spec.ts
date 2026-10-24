@@ -1,8 +1,8 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /**
  * Scheduled publishing (plan P0.6). Jobs are queued exactly as the admin
@@ -43,8 +43,7 @@ const statusOf = async (id: number) =>
   (await payload.findByID({ collection: 'articles', id, draft: false }))._status
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-sched-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-sched-test.db'
+  await useTestDatabase('scheduling')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
   const make = (email: string, role: 'editor' | 'writer') =>
@@ -73,9 +72,10 @@ describe('scheduled publishing', () => {
     expect(await statusOf(article.id)).not.toBe('published')
   })
 
-  it('a writer cannot publish by scheduling: the job runs with the writer’s rights and is refused', async () => {
+  it('a writer cannot publish by scheduling: the schedule is refused when queued (T22)', async () => {
     const article = await draftBy(writer, 'scheduled-by-writer')
-    await schedulePublish(writer, article.id, past())
+    // Before the jobs guard this queued fine and was only refused when it ran.
+    await expect(schedulePublish(writer, article.id, past())).rejects.toMatchObject({ status: 403 })
     await payload.jobs.run({ queue: 'default' })
     expect(await statusOf(article.id)).not.toBe('published')
   })
