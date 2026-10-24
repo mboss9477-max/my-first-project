@@ -39,3 +39,11 @@ Let the website read the new Payload CMS instead of Sanity, switchable, local on
 
 ## Side effects outside git
 - Local only: `news-site/cms/seed-local.db` and `news-site/cms/media/` (gitignored). I deleted the old contents of `cms/media/` (test uploads, gitignored) when reseeding. No servers left running.
+
+## To see CMS mode locally (throwaway data only)
+```
+cd news-site/cms
+DATABASE_URL=file:./seed-local.db npm run payload -- run scripts/seed-local.ts
+DATABASE_URL=file:./seed-local.db npm run dev          # CMS on port 3200
+```
+Then in `news-site/web`: `CONTENT_SOURCE=cms CMS_URL=http://localhost:3200 npm run build && CONTENT_SOURCE=cms CMS_URL=http://localhost:3200 npx next start -p 3100`. Delete `seed-local.db` and `media/` to reset. Run `rm -rf .next` between a Sanity build and a CMS build, or Next's fetch cache may serve stale data.
