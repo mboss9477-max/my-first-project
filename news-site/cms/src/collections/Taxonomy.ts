@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isEditorOrAdmin, publicRead } from '../access/roles'
+import { notifyAfterTaxonomyChange } from '../hooks/notifyWeb'
 
 const slugField = {
   name: 'slug',
@@ -21,6 +22,7 @@ export const Categories: CollectionConfig = {
   slug: 'categories',
   admin: { useAsTitle: 'name' },
   access: taxonomyAccess,
+  hooks: { afterChange: [notifyAfterTaxonomyChange('category')] },
   fields: [{ name: 'name', type: 'text', required: true }, slugField],
 }
 
@@ -28,6 +30,7 @@ export const Topics: CollectionConfig = {
   slug: 'topics',
   admin: { useAsTitle: 'name' },
   access: taxonomyAccess,
+  hooks: { afterChange: [notifyAfterTaxonomyChange('topic')] },
   fields: [
     { name: 'name', type: 'text', required: true },
     slugField,
@@ -44,6 +47,7 @@ export const Authors: CollectionConfig = {
   slug: 'authors',
   admin: { useAsTitle: 'name' },
   access: taxonomyAccess,
+  hooks: { afterChange: [notifyAfterTaxonomyChange('author')] },
   fields: [
     { name: 'name', type: 'text', required: true },
     slugField,

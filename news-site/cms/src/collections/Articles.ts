@@ -1,6 +1,7 @@
 import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
 import { hasRole, isEditorOrAdmin } from '../access/roles'
+import { notifyAfterArticleChange, notifyAfterArticleDelete } from '../hooks/notifyWeb'
 import { SLUG_PATTERN, slugify } from './slug'
 
 /**
@@ -75,6 +76,8 @@ export const Articles: CollectionConfig = {
     },
   },
   hooks: {
+    afterChange: [notifyAfterArticleChange],
+    afterDelete: [notifyAfterArticleDelete],
     beforeChange: [
       ({ req, operation, data }) => {
         // Record who created the article; used for writer ownership.
