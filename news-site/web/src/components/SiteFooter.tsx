@@ -14,8 +14,7 @@ import Link from "next/link";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { siteYear } from "@/lib/format";
 import { SITE_NAME } from "@/lib/site";
-import { client } from "@/sanity/client";
-import { ALL_CATEGORIES_QUERY, type Category } from "@/sanity/queries";
+import { getAllCategories } from "@/data";
 
 /** Real destinations. */
 const LATEST_LINKS = [
@@ -80,7 +79,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
 }
 
 export async function SiteFooter() {
-  const categories = await client.fetch<Category[]>(ALL_CATEGORIES_QUERY);
+  const categories = await getAllCategories();
 
   return (
     <footer className="mt-16">

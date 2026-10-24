@@ -1,15 +1,8 @@
+import { getNewsSitemapItems } from "@/data";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { escapeXml } from "@/lib/xml";
-import { client } from "@/sanity/client";
-import { NEWS_SITEMAP_QUERY } from "@/sanity/queries";
 
 export const revalidate = 300;
-
-type NewsItem = {
-  headline: string;
-  slug: string;
-  publishedAt: string | null;
-};
 
 /**
  * Google News sitemap — a separate spec from the regular sitemap. Google only
@@ -18,7 +11,7 @@ type NewsItem = {
  */
 export async function GET() {
   const since = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-  const articles = await client.fetch<NewsItem[]>(NEWS_SITEMAP_QUERY, { since });
+  const articles = await getNewsSitemapItems(since);
 
   const urls = articles
     .map(

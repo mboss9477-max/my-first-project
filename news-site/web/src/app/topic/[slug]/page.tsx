@@ -4,22 +4,13 @@ import { notFound } from "next/navigation";
 import { ArticleRow } from "@/components/ArticleRow";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SITE_NAME } from "@/lib/site";
-import { client } from "@/sanity/client";
-import {
-  TOPIC_QUERY,
-  TOPIC_SLUGS_QUERY,
-  type TopicWithArticles,
-} from "@/sanity/queries";
+import { getTopic, getTopicSlugs } from "@/data";
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  const slugs = await client.fetch<string[]>(TOPIC_SLUGS_QUERY);
+  const slugs = await getTopicSlugs();
   return slugs.map((slug) => ({ slug }));
-}
-
-function getTopic(slug: string) {
-  return client.fetch<TopicWithArticles | null>(TOPIC_QUERY, { slug });
 }
 
 export async function generateMetadata({
