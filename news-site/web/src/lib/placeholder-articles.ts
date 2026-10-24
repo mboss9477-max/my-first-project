@@ -1,4 +1,4 @@
-import type { ArticleListItem } from "@/sanity/queries";
+import type { ArticleListItem } from "@/data";
 
 /**
  * PLACEHOLDER CONTENT — not real reporting, not from Sanity.

@@ -1,21 +1,11 @@
+import { getFeedItems } from "@/data";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import { escapeXml } from "@/lib/xml";
-import { client } from "@/sanity/client";
-import { FEED_QUERY } from "@/sanity/queries";
 
 export const revalidate = 600;
 
-type FeedItem = {
-  headline: string;
-  slug: string;
-  excerpt: string | null;
-  byline: string | null;
-  publishedAt: string | null;
-  category: string | null;
-};
-
 export async function GET() {
-  const articles = await client.fetch<FeedItem[]>(FEED_QUERY);
+  const articles = await getFeedItems();
 
   const items = articles
     .map((article) => {
