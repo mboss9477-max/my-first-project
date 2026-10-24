@@ -63,3 +63,6 @@ Nothing private belongs here (no server addresses, account emails, tokens or pas
 | 2026-10-24 | **Merge authority:** Claude merges when all required checks are green and the other agent has approved; UI changes still need the owner's visual sign-off; server, DNS, settings, spending and credentials need explicit OK | Owner |
 | 2026-10-24 | Tasks for Gemini are GitHub issues labelled `gemini-task` from the owner's account; Gemini ignores anyone else's | Public repository safety |
 | 2026-10-24 | **Notion holds the whole plan** from the first day to launch day; **GitHub holds the context** (rules, decisions, history); GitHub wins when they disagree | Owner |
+| 2026-10-25 | **Staging is approved as a plan only** (`docs/staging-plan.md`): the owner is told each server step before it is done and approves it step by step; the owner confirms the "?" checklist items (snapshots, token rotation, uptime monitoring, Coolify secrets backup) themselves | Owner |
+| 2026-10-25 | **Ask before deleting** any file the owner did not ask to be deleted (including generated or ignored files) | Owner |
+| 2026-10-25 | The migration from Sanity (`news-site/cms/scripts/migrate-from-sanity.ts`) is a dry run by default; writing needs `MIGRATE_APPLY=1` and the target typed back; it skips what already exists and never deletes | Safety (S5, S16) |
