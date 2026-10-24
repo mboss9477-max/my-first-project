@@ -1,8 +1,8 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /** Threat-model T1 (lockout), T4 (sessions), T5 (CSRF origins), T22 (schedule guard). */
 let payload: Payload
@@ -26,8 +26,7 @@ const refusal = (call: Promise<unknown>) =>
   )
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-hardening-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-hardening-test.db'
+  await useTestDatabase('hardening')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
   editor = await makeUser('editor@example.test', 'editor')

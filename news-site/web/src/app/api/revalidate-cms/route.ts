@@ -45,12 +45,19 @@ export async function POST(request: NextRequest) {
     return new Response("Body too large", { status: 413 });
   }
 
-  let body: { type?: unknown; slug?: unknown; categorySlug?: unknown };
+  let parsed: unknown;
   try {
-    body = JSON.parse(raw);
+    parsed = JSON.parse(raw);
   } catch {
     return new Response("Body must be JSON", { status: 400 });
   }
+
+  // Valid JSON is not necessarily an object: `null`, arrays, strings and
+  // numbers all parse, and `null` used to crash this route with a 500.
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return new Response("Body must be a JSON object", { status: 400 });
+  }
+  const body = parsed as { type?: unknown; slug?: unknown; categorySlug?: unknown };
 
   if (typeof body.type !== "string" || !body.type) {
     return new Response("Body is missing type", { status: 400 });

@@ -1,9 +1,9 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /** Image handling (plan P0.7): sizes, focal point, type limits, large uploads. */
 let payload: Payload
@@ -18,8 +18,7 @@ async function jpeg(width: number, height: number) {
 const asFile = (data: Buffer, name: string, mimetype: string) => ({ data, name, mimetype, size: data.length })
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-media-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-media-test.db'
+  await useTestDatabase('media')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
   writer = await payload.create({

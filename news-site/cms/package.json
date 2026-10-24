@@ -16,6 +16,7 @@
     "test": "cross-env NODE_OPTIONS=--no-deprecation vitest run"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "3.92.0",
     "@payloadcms/db-sqlite": "3.92.0",
     "@payloadcms/next": "3.92.0",
     "@payloadcms/richtext-lexical": "3.92.0",
