@@ -1,7 +1,7 @@
 "use client";
 
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -12,6 +12,8 @@ const OPTIONS: { value: Theme; label: string; Icon: typeof Sun }[] = [
   { value: "dark", label: "Dark", Icon: Moon },
   { value: "system", label: "System", Icon: Monitor },
 ];
+
+const emptySubscribe = () => () => {};
 
 function apply(theme: Theme) {
   const root = document.documentElement;
@@ -31,16 +33,19 @@ function apply(theme: Theme) {
  * choice and a guess would flash the wrong icon.
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("system");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
-  useEffect(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "system";
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      setTheme(stored);
-    }
-    setMounted(true);
-  }, []);
+    return stored === "light" || stored === "dark" || stored === "system"
+      ? stored
+      : "system";
+  });
 
   function choose(next: Theme) {
     setTheme(next);
