@@ -20,6 +20,13 @@ const SCHEDULE_TASK = 'schedulePublish'
 
 const staffRoles: Role[] = ['admin', 'editor']
 
+/** The user id a job names, whether stored as `{ relationTo, value }` or a bare id. */
+function userIdOf(userRef: unknown): number | string | undefined {
+  if (userRef === undefined || userRef === null) return undefined
+  if (typeof userRef === 'object') return (userRef as { value?: number | string }).value
+  return userRef as number | string
+}
+
 async function roleOf(payload: Payload, userRef: unknown): Promise<Role | null> {
   const ref =
     typeof userRef === 'object' && userRef !== null
@@ -48,6 +55,27 @@ export const guardJobsCollection = ({
       ...(defaultJobsCollection.hooks?.beforeChange ?? []),
       async ({ data, operation, req }) => {
         if (operation !== 'create' || data?.taskSlug !== SCHEDULE_TASK) return data
+        const named = userIdOf(data?.input?.user)
+
+        // A signed-in caller: their own role decides, and the job must name
+        // them. Without this a writer could name an editor in `input.user` and
+        // have the job run with the editor's rights (found by Gemini's review
+        // of PR #16). Payload exposes no network route that creates jobs, so
+        // this is defence in depth against any future code path.
+        if (req.user) {
+          const actor = req.user as { id: number | string; role?: Role }
+          if (!actor.role || !staffRoles.includes(actor.role)) {
+            throw new APIError('Only an editor can schedule publishing.', 403, undefined, true)
+          }
+          if (named !== undefined && String(named) !== String(actor.id)) {
+            throw new APIError('A schedule must be created in your own name.', 403, undefined, true)
+          }
+          return data
+        }
+
+        // No signed-in caller: Payload's admin schedule button queues without
+        // passing the request, so the job's own scheduling user (which the
+        // admin fills in from the session) is the only evidence of who asked.
         const schedulerRole = await roleOf(req.payload, data?.input?.user)
         if (!schedulerRole || !staffRoles.includes(schedulerRole)) {
           throw new APIError('Only an editor can schedule publishing.', 403, undefined, true)
