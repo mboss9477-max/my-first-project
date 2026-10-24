@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 type TextSize = "normal" | "large" | "larger";
 
@@ -11,6 +11,8 @@ const LABELS: Record<TextSize, string> = {
   large: "Large text size",
   larger: "Larger text size",
 };
+
+const emptySubscribe = () => () => {};
 
 function apply(size: TextSize) {
   if (size === "normal") {
@@ -34,16 +36,17 @@ function apply(size: TextSize) {
  * and guessing would flash the wrong size.
  */
 export function TextSizeControl() {
-  const [size, setSize] = useState<TextSize>("normal");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
-  useEffect(() => {
+  const [size, setSize] = useState<TextSize>(() => {
+    if (typeof window === "undefined") return "normal";
     const stored = window.localStorage.getItem(STORAGE_KEY) as TextSize | null;
-    if (stored && SIZES.includes(stored)) {
-      setSize(stored);
-    }
-    setMounted(true);
-  }, []);
+    return stored && SIZES.includes(stored) ? stored : "normal";
+  });
 
   function cycle() {
     const next = SIZES[(SIZES.indexOf(size) + 1) % SIZES.length];
