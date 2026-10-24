@@ -5,7 +5,7 @@
 | **Author** | Claude Code (v0.3) |
 | **Reviewer** | Gemini (review of v0.1 incorporated; re-review of v0.3 requested) |
 | **Decider** | The human owner |
-| **Status** | DRAFT for decision. Nothing here is built or decided. |
+| **Status** | Decided by the owner (G0, 2026-10-23): Payload, Postgres, a separate CMS container. Phase 0 trial and early Phase 1 are built and merged (see `docs/backend-plan.md`, "Done so far"); staging, the CMS implementation of the data seam and cutover are not. Sections below were written before the build and are not rewritten; where they differ from the code, the code and `docs/decisions.md` win. |
 | **Evidence** | Third-party facts were checked against official docs and repos on 2026-10-23. Items marked **[verify]** could not be confirmed. Payload's `main` is a 4.0 beta; the docs pages read were the 3.x docs. |
 
 ## 1. Owner requirements and constraints
