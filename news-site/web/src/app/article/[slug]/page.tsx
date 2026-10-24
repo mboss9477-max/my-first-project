@@ -9,7 +9,7 @@ import { ReadingProgress } from "@/components/ReadingProgress";
 import { RelatedArticles } from "@/components/RelatedArticles";
 import { ShareLinks } from "@/components/ShareLinks";
 import { formatDate } from "@/lib/format";
-import { readingTime } from "@/lib/reading-time";
+import { hasBodyContent, readingTime } from "@/lib/reading-time";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getArticle, getArticleSlugs, type Article } from "@/data";
 import { displayDimensions, imageUrl } from "@/data/image";
@@ -244,7 +244,7 @@ export default async function ArticlePage({
         ) : null}
 
         <div className="fade-in mt-8 text-lg">
-          {article.body?.length ? (
+          {hasBodyContent(article.body) && article.body ? (
             <ArticleBody value={article.body} />
           ) : (
             <p className="text-ink-soft">This article has no body content yet.</p>
