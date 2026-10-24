@@ -8,9 +8,9 @@ import type { SanityImageSource } from "@sanity/image-url";
 
 import {
   displayDimensions,
-  urlForImage,
+  imageUrl,
   type ImageDimensions,
-} from "@/sanity/image";
+} from "@/data/image";
 
 type InlineImage = SanityImageSource & {
   alt?: string | null;
@@ -25,7 +25,7 @@ function InlineImageView({ value }: { value: InlineImage }) {
   return (
     <figure className="my-8">
       <Image
-        src={urlForImage(value).width(size.width).url()}
+        src={imageUrl(value, { width: size.width })}
         alt={value.alt ?? ""}
         width={size.width}
         height={size.height}
