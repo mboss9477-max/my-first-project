@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import type { Category } from "@/sanity/queries";
+import type { Category } from "@/data";
 
 /**
  * Section nav with a gold underline that slides between sections.

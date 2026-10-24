@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
 import { urlForImage } from "@/sanity/image";
-import type { ArticleListItem } from "@/sanity/queries";
+import type { ArticleListItem } from "@/data";
 
 type RowArticle = ArticleListItem & { placeholderImage?: string };
 

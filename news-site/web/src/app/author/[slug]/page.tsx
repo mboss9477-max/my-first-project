@@ -5,23 +5,14 @@ import { notFound } from "next/navigation";
 import { ArticleRow } from "@/components/ArticleRow";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { client } from "@/sanity/client";
+import { getAuthor, getAuthorSlugs } from "@/data";
 import { urlForImage } from "@/sanity/image";
-import {
-  AUTHOR_QUERY,
-  AUTHOR_SLUGS_QUERY,
-  type AuthorWithArticles,
-} from "@/sanity/queries";
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  const slugs = await client.fetch<string[]>(AUTHOR_SLUGS_QUERY);
+  const slugs = await getAuthorSlugs();
   return slugs.map((slug) => ({ slug }));
-}
-
-function getAuthor(slug: string) {
-  return client.fetch<AuthorWithArticles | null>(AUTHOR_QUERY, { slug });
 }
 
 export async function generateMetadata({
