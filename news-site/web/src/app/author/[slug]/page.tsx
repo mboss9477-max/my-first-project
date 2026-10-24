@@ -6,7 +6,7 @@ import { ArticleRow } from "@/components/ArticleRow";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getAuthor, getAuthorSlugs } from "@/data";
-import { urlForImage } from "@/sanity/image";
+import { imageUrl } from "@/data/image";
 
 export const revalidate = 60;
 
@@ -55,7 +55,7 @@ export default async function AuthorPage({
   }
 
   const portrait = author.image
-    ? urlForImage(author.image).width(160).height(160).fit("crop").url()
+    ? imageUrl(author.image, { width: 160, height: 160 })
     : null;
 
   const jsonLd = {
