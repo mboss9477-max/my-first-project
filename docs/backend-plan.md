@@ -34,8 +34,16 @@ The slowest links are the owner decisions (G0, G1), the trial, and the rich-text
 | Two-agent working agreement (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) | **Done**, merged (PR #3) |
 | `.gitattributes` line-ending normalisation | **Done**, merged (PR #5) |
 | Backend design document | Draft, PR #4, reviewed once by Gemini, v0.3 |
-| Threat model | Draft, PR #6, awaiting Gemini review |
-| Test runner (vitest) | Gemini job in progress |
+| Threat model | Draft, PR #6, reviewed and approved by Gemini |
+| Test runner (vitest) | **Done**, merged (PR #8) |
+| CMS trial (Payload, roles, converter, CI) | **Done**, merged (PR #9); editorial workflow and upload limits (#13) |
+| Schedule guard, lockout, sessions, CSRF origin (T22 and others) | **Done**, merged (#16, #19) |
+| Publish webhook (task 1.10) | **Done**, merged (#18, #22) |
+| CMS on Postgres (task 1.3) | **Done**, merged (#23); SQLite kept for quick local runs |
+| Adversarial tests | **Done**, merged (#14) |
+| Data seam, stage 1 (task 1.7) | **Done**, merged (#15); stage 2 (images, bodies) still to do |
+| Writer walkthrough (P0.9) and editor UX proposal (1.12) | **Done** as documents, merged (#11, #12); no UI built |
+| Staging (1.4), CMS implementation of the seam (1.9) | Not started; staging needs the owner's go-ahead (S5) |
 
 ## Phase 0: Decisions and trial
 
