@@ -1,9 +1,9 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { affectsLivePage } from '../src/hooks/notifyWeb'
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /** Plan task 1.10: the website is told when published content changes. */
 let payload: Payload
@@ -14,8 +14,7 @@ const sent: Array<{ url: string; secret: string | null; body: Record<string, unk
 const settle = () => new Promise((resolve) => setTimeout(resolve, 60))
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-webhook-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-webhook-test.db'
+  await useTestDatabase('webhook')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
   editor = await payload.create({

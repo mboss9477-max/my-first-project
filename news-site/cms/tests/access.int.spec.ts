@@ -1,8 +1,8 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 let payload: Payload
 let admin: User
@@ -35,9 +35,7 @@ async function makeStaff(email: string, role: 'admin' | 'editor' | 'writer') {
 }
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) {
-    rmSync(`./cms-test.db${suffix}`, { force: true })
-  }
+  await useTestDatabase('access')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
 
