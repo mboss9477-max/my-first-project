@@ -1,8 +1,8 @@
-import { rmSync } from 'fs'
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { User } from '../src/payload-types'
+import { useTestDatabase } from './helpers/testDatabase'
 
 /**
  * Scheduled publishing (plan P0.6). Jobs are queued exactly as the admin
@@ -43,8 +43,7 @@ const statusOf = async (id: number) =>
   (await payload.findByID({ collection: 'articles', id, draft: false }))._status
 
 beforeAll(async () => {
-  for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(`./cms-sched-test.db${suffix}`, { force: true })
-  process.env.DATABASE_URL = 'file:./cms-sched-test.db'
+  await useTestDatabase('scheduling')
   const { default: config } = await import('../src/payload.config')
   payload = await getPayload({ config })
   const make = (email: string, role: 'editor' | 'writer') =>
