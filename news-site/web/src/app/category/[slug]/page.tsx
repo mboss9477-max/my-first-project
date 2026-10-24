@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 
 import { CategoryListing, getCategory } from "@/components/CategoryListing";
+import { getCategorySlugs } from "@/data";
 import { SITE_NAME } from "@/lib/site";
-import { client } from "@/sanity/client";
-import { CATEGORY_SLUGS_QUERY } from "@/sanity/queries";
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  const slugs = await client.fetch<string[]>(CATEGORY_SLUGS_QUERY);
+  const slugs = await getCategorySlugs();
   return slugs.map((slug) => ({ slug }));
 }
 

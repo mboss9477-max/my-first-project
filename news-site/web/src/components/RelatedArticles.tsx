@@ -1,9 +1,8 @@
 import Link from "next/link";
 
 import { Reveal } from "@/components/Reveal";
+import { getRelatedArticles } from "@/data";
 import { formatDate } from "@/lib/format";
-import { client } from "@/sanity/client";
-import { RELATED_ARTICLES_QUERY, type ArticleListItem } from "@/sanity/queries";
 
 /**
  * More from the same section, at the foot of an article. Renders nothing when
@@ -18,10 +17,7 @@ export async function RelatedArticles({
 }) {
   if (!categorySlug) return null;
 
-  const related = await client.fetch<ArticleListItem[]>(
-    RELATED_ARTICLES_QUERY,
-    { id: articleId, categorySlug },
-  );
+  const related = await getRelatedArticles(articleId, categorySlug);
 
   if (related.length === 0) return null;
 

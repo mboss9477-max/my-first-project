@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "news-site/web", "run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "cms",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "news-site/cms", "run", "dev"],
+      "port": 3200
     }
   ]
 }
