@@ -11,25 +11,18 @@ import { ShareLinks } from "@/components/ShareLinks";
 import { formatDate } from "@/lib/format";
 import { readingTime } from "@/lib/reading-time";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { client } from "@/sanity/client";
+import { getArticle, getArticleSlugs, type Article } from "@/data";
 import { displayDimensions, urlForImage } from "@/sanity/image";
-import {
-  ARTICLE_QUERY,
-  ARTICLE_SLUGS_QUERY,
-  type Article,
-} from "@/sanity/queries";
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  const slugs = await client.fetch<string[]>(ARTICLE_SLUGS_QUERY);
+  const slugs = await getArticleSlugs();
   return slugs.map((slug) => ({ slug }));
 }
 
-function getArticle(slug: string) {
-  // Called by generateMetadata, the OG image and the page; Next dedupes it.
-  return client.fetch<Article | null>(ARTICLE_QUERY, { slug });
-}
+// getArticle is called by generateMetadata, the OG image and the page; Next
+// dedupes the identical fetches.
 
 /** 1200x630 crop of the hero, the conventional Open Graph card size. */
 function socialImage(article: Article) {

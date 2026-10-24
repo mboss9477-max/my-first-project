@@ -1,8 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { getArticle } from "@/data";
 import { SITE_NAME } from "@/lib/site";
-import { client } from "@/sanity/client";
-import { ARTICLE_QUERY, type Article } from "@/sanity/queries";
 
 export const alt = "Article preview";
 export const size = { width: 1200, height: 630 };
@@ -18,9 +17,7 @@ export default async function Image({
 }: {
   params: { slug: string };
 }) {
-  const article = await client.fetch<Article | null>(ARTICLE_QUERY, {
-    slug: params.slug,
-  });
+  const article = await getArticle(params.slug);
 
   const headline = article?.headline ?? SITE_NAME;
   const category = article?.category ?? null;

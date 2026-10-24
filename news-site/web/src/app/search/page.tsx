@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import { ArticleRow } from "@/components/ArticleRow";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SearchForm } from "@/components/SearchForm";
+import { searchArticles } from "@/data";
 import { SITE_NAME } from "@/lib/site";
-import { client } from "@/sanity/client";
-import { SEARCH_QUERY, type ArticleListItem } from "@/sanity/queries";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -23,11 +22,8 @@ export default async function SearchPage({
   const { q } = await searchParams;
   const term = q?.trim() ?? "";
 
-  // GROQ's `match` is prefix-based per word; the wildcard makes partial words
-  // match too, which is what a reader expects from a search box.
-  const results = term
-    ? await client.fetch<ArticleListItem[]>(SEARCH_QUERY, { q: `${term}*` })
-    : [];
+  // Partial words match too, which is what a reader expects from a search box.
+  const results = await searchArticles(term);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">

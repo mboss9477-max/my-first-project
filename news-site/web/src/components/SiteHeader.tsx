@@ -4,20 +4,14 @@ import Link from "next/link";
 import { CategoryNav } from "@/components/CategoryNav";
 import { SiteMenu } from "@/components/SiteMenu";
 import { TextSizeControl } from "@/components/TextSizeControl";
+import { getAllCategories, getTrendingTopics } from "@/data";
 import { mastheadDate } from "@/lib/format";
 import { SITE_NAME } from "@/lib/site";
-import { client } from "@/sanity/client";
-import {
-  ALL_CATEGORIES_QUERY,
-  TRENDING_TOPICS_QUERY,
-  type Category,
-  type Topic,
-} from "@/sanity/queries";
 
 export async function SiteHeader() {
   const [categories, trending] = await Promise.all([
-    client.fetch<Category[]>(ALL_CATEGORIES_QUERY),
-    client.fetch<Topic[]>(TRENDING_TOPICS_QUERY),
+    getAllCategories(),
+    getTrendingTopics(),
   ]);
 
   return (
