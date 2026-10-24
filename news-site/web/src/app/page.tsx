@@ -5,9 +5,8 @@ import { HeadlineCarousel } from "@/components/HeadlineCarousel";
 import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
 import { PLACEHOLDER_ARTICLES } from "@/lib/placeholder-articles";
-import { client } from "@/sanity/client";
+import { getLatestArticles, type ArticleListItem } from "@/data";
 import { urlForImage } from "@/sanity/image";
-import { ARTICLES_QUERY, type ArticleListItem } from "@/sanity/queries";
 
 // Re-fetch from Sanity at most once a minute.
 export const revalidate = 60;
@@ -252,9 +251,7 @@ function BriefingCell({ articles }: { articles: CardArticle[] }) {
 export default async function HomePage() {
   // Bounded: the front page only ever renders a fixed number of slots, so the
   // query no longer pulls every article in the dataset.
-  const published = await client.fetch<ArticleListItem[]>(ARTICLES_QUERY, {
-    limit: 12,
-  });
+  const published = await getLatestArticles(12);
 
   // Fall back to placeholder content only while the dataset is empty, so the
   // layout is reviewable before anything is published.
