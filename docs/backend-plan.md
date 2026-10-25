@@ -80,6 +80,7 @@ Goal: the live site reads articles from our backend, writers and editors use our
 | 1.6 | Media pipeline: generated sizes, blur placeholder, size and type limits, required alt, focal point, storage on a persistent volume | C | 1.3 | upload works end to end | oversized and wrong-type uploads rejected; images load through `next/image`; memory stays inside budget in the 1.17 measurement | none | M |
 | 1.7 | **Data seam** `web/src/data/` with an implementation that wraps Sanity, no behaviour change | C | G0 | PR | `tsc`, build and the route table before and after are identical (no route flips static to dynamic) | none | M |
 | 1.8 | Tests for the data seam and pure helpers; add `npm test` to CI | G (tests), C (CI) | 1.7 and vitest PR | tests | CI runs them on every PR | none | S |
+| 1.8a | **Language-readiness spike**: decide and test Payload localization with only English filled, before any content is migrated (retrofitting is costly). Questions and pass criteria: `docs/master-plan.md`, "Task 1.8a in detail" | C | none | `docs/localization-spike.md`, go or no-go, decision-log line | the 11 questions answered with evidence on a throwaway branch and local database; existing tests unchanged | none | M |
 | 1.9 | CMS implementation of the seam; public site reads from the CMS API with 60 s revalidation | C | 1.4, 1.7 | PR behind a config switch | staging site renders all existing pages from CMS data; switch off returns to Sanity | none | L |
 | 1.10 | Revalidation webhook on publish, with a secret and signature check; draft preview with a secret | C | 1.9 | route handlers | a publish on staging updates the page in under 60 s; requests without the secret are rejected | none | M |
 | 1.11 | Update image config: `remotePatterns`, CSP `img-src`, URL helpers (replaces `cdn.sanity.io`) | C | 1.6 | PR | no CSP violations in the browser console on staging pages | none | S |
@@ -135,6 +136,21 @@ Starts only after the owner has checked legal and tax obligations. The agents do
 | 3.7 | Paywall, upgrade prompt and account billing UI | G | 3.4, 3.5 | PR | owner visual sign-off; design rules respected (no popup newsletter pattern, calm motion) | none | L |
 | 3.8 | End-to-end test in provider test mode, plus security review of money paths | C and G | 3.4 to 3.7 | test report | success, failure, cancel, refund and expiry all tested | none | M |
 | **G3** | **Owner decision** to go live with real payments | H | 3.8 | decision | explicit; live keys supplied by the owner | **S5** | none |
+
+## Language phase (master plan M6, after launch)
+
+Owner question ML-1 (languages at launch, or first thing after) decides when. Task 1.8a above is not optional: it makes the CMS language-ready before content is migrated. Full task list: `docs/master-plan.md`, M6.
+
+| ID | Task | Owner | Needs | Output | Acceptance | Risk | Size |
+|----|------|-------|-------|--------|------------|------|------|
+| L.1 | **Translator role**: drafts translations, cannot publish; a human reviewer who reads the language approves; an editor publishes. Per-language review status on each article | C | 1.8a | access rules, hooks, tests | tests prove a translator cannot publish, a reviewer approval is recorded and cannot be forged, an editor can publish only a reviewed translation | none | M |
+| L.2 | Translator desk (queue of stories needing translation, source beside draft, review queue) | G (UI), C (data) | L.1 | PR | owner visual sign-off; keyboard and screen reader checks | none | L |
+| L.3 | Language editions: URL structure, pages, feeds and navigation per language, with an honest fallback to English | C, G | 1.8a, L.1 | PR | a translated story is reachable in its language; an untranslated one says so | none | L |
+| L.4 | hreflang links between language versions, `x-default` to English | C | L.3 | metadata in the page files | every translated page lists all its versions and itself; validated with a checker | none | S |
+| L.5 | Per-language sitemaps and feeds (and news sitemaps where Google News applies) | C | L.3 | route handlers | each sitemap lists only that language's published stories | none | M |
+| L.6 | The real language switcher (replaces the `EN` placeholder); shows only languages the page exists in; no popup | G (UI), C (data) | L.3 | PR | owner visual sign-off; works without JavaScript for links | none | M |
+| L.7 | Machine translation (DeepL for Spanish and Mandarin) feeding drafts only; vendor approved by the owner first; data flow added to the threat model | C | owner approval of the vendor | PR, threat-model row | no unpublished text is sent without that approval; drafts always need human review | S5 (account, credentials) | M |
+| L.8 | Arabic: right-to-left site and editor, tested with an Arabic-competent human | C, G | L.3 | PR | the human reviewer signs off | none | L |
 
 ## Cross-cutting work (every phase)
 
