@@ -77,6 +77,7 @@ Each step: **what**, **who**, **check**, **undo**. "Owner OK" means a go in chat
 - **Undo:** delete the Access application (the CMS then relies on its own login only, with lockout).
 
 ### S7. Migration rehearsal (task 1.13)
+- **Wait for task 1.8a first** (the language-readiness spike, `docs/master-plan.md`): if the CMS turns out to need per-language storage, content migrated before that has to be moved afterwards. The migration script and the website's data layer may then need a language argument.
 - **What:** run `news-site/cms/scripts/migrate-from-sanity.ts` against the staging database. First a **dry run** (writes nothing), then, after the owner reads the report, an **apply** (writes to the staging database only, after typing the target name shown by the dry run).
 - **Who:** Claude runs it (from a place that can reach the database); owner OK for the apply.
 - **Check:** the report shows no problems; 13 articles, 6 categories, 6 topics, 1 author, 13 images; a second run skips everything.
