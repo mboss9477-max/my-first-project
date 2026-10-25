@@ -17,6 +17,7 @@ Read in this order when starting cold:
 | [`staging-plan.md`](staging-plan.md) | The server steps for staging, each needing the owner's go-ahead; nothing in it has been done |
 | [`cutover-runbook.md`](cutover-runbook.md) | The day of the switch from Sanity to the new CMS, with rollback and a log to fill in |
 | [`threat-model.md`](threat-model.md) | Threats T1 to T25, mitigations and status |
+| [`problems.md`](problems.md) | The shared problem register: every known problem, who has it, its status |
 | [`progress-checklist.md`](progress-checklist.md) | Per change: what the author checked, what the other agent tested |
 | [`writer-walkthrough.md`](writer-walkthrough.md) | Acceptance checklist for a non-technical writer |
 | [`editor-ux.md`](editor-ux.md) | Proposed admin experience for writers and editors |
