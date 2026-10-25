@@ -17,13 +17,25 @@ import { projectId } from "./src/sanity/env";
 // uses eval and must not carry the relaxation.
 const isDev = process.env.NODE_ENV === "development";
 
+// The new CMS serves its own images (plan task 1.9). Only when the site is
+// switched to it (CONTENT_SOURCE=cms) is its origin allowed for images.
+const cmsOrigin =
+  process.env.CONTENT_SOURCE === "cms"
+    ? new URL(
+        process.env.CMS_PUBLIC_URL ?? process.env.CMS_URL ?? "http://localhost:3200",
+      )
+    : null;
+const cmsIsLocal =
+  cmsOrigin !== null &&
+  ["localhost", "127.0.0.1", "[::1]"].includes(cmsOrigin.hostname);
+
 const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   // cdn.sanity.io: real hero/body images. picsum.photos: the placeholder
   // fallback only — remove once src/lib/placeholder-articles.ts is deleted.
-  "img-src 'self' data: blob: https://cdn.sanity.io https://picsum.photos",
+  `img-src 'self' data: blob: https://cdn.sanity.io https://picsum.photos${cmsOrigin ? ` ${cmsOrigin.origin}` : ""}`,
   "font-src 'self' data:",
   "connect-src 'self'",
   "object-src 'none'",
@@ -45,7 +57,20 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
+    // Next refuses to optimise images from private addresses; a CMS on
+    // localhost (local testing only) needs this explicitly.
+    dangerouslyAllowLocalIP: cmsIsLocal,
     remotePatterns: [
+      ...(cmsOrigin
+        ? [
+            {
+              protocol: cmsOrigin.protocol.replace(":", "") as "http" | "https",
+              hostname: cmsOrigin.hostname,
+              port: cmsOrigin.port,
+              pathname: "/api/media/file/**",
+            },
+          ]
+        : []),
       {
         protocol: "https",
         hostname: "cdn.sanity.io",

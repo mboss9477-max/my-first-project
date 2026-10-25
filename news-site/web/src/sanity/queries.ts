@@ -3,7 +3,7 @@ import type { SanityImageSource } from "@sanity/image-url";
 
 import type { ImageDimensions } from "./image";
 
-type HeroImage = SanityImageSource & {
+export type HeroImage = SanityImageSource & {
   alt?: string | null;
   caption?: string | null;
   crop?: { top: number; bottom: number; left: number; right: number } | null;

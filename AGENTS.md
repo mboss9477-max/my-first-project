@@ -2,7 +2,9 @@
 
 Applies to every AI agent working in this repo (Claude Code, Gemini CLI). The human owner is the final authority and the only one who can approve production-affecting actions. This file is the merged result of the two agents' proposals. Change it only through a PR that the other agent reviews and the human approves.
 
-Read this file first, every session.
+Read this file first, every session. Then, in order: `docs/README.md` (the docs map), `docs/decisions.md`, `docs/master-plan.md`, and the newest file in `docs/handoffs/`.
+
+The owner's working rules: finish the current task before a mid-task query, then always return to it; the repo is public, so secrets are never printed or committed; report honestly what was and was not verified; spending and server changes need the owner's explicit OK.
 
 ## Project
 
@@ -64,7 +66,7 @@ The other agent edits an area only through a claimed task (see Workflow) with th
 2. Session start: read `AGENTS.md`; `git fetch`; `git status` must be clean; `gh pr list --state open`; read the newest relevant file in `docs/handoffs/`. If your paths overlap an open PR, stop and ask the human.
 3. **Claim by draft PR**: push the branch and open a draft PR titled `[WIP] <agent>: <topic>` listing the paths you will touch.
 4. Small commits. Before marking ready: `npx tsc --noEmit` and `npm run build` pass. For web changes compare the build's route table before and after (`●` static vs `ƒ` dynamic) and flag any route that flipped.
-5. Mark ready. CI must be green and the other agent must review. **The human merges, using squash** (one commit per task, easy to revert; the PR description carries the attribution trailers).
+5. Mark ready. CI must be green and the other agent must review. **Claude merges, using squash, once all three required checks are green and the other agent has approved** (one commit per task, easy to revert; the PR description carries the attribution trailers). UI changes still need the owner's visual sign-off first; server, DNS, settings, spending and credentials need the owner's explicit OK (S5). After a merge, check the live site and revert if it is unhealthy. This is the owner's decision of 2026-10-24 (`docs/decisions.md`).
 6. **Review standard.** Use a review worktree (see above), run the checks, read the diff against the *stated task*. Write down: what you ran, what you found, a plain-language summary of what the change does, and one thing you tried to break. "LGTM" without evidence does not count. A reviewer's objection blocks the merge until the author addresses it or the human overrules.
 7. **UI changes need the human's visual sign-off** (screenshots or a running preview) before merge. Neither agent can reliably see rendered UI, so a passing build is not enough.
 8. Merge is deploy for the web app (see Project). Tell the human what a merge will release, and prefer merging only after the other agent's review; a change merged first is tested afterwards and marked ⚠️ in the checklist.
