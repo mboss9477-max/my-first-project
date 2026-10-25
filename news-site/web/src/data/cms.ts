@@ -6,6 +6,7 @@
  * Every request carries `next.revalidate = 60`, the same 60 s window the pages
  * use, so a route stays static (S7) and the publish webhook refreshes it sooner.
  */
+import { createRateLimiter } from "@/lib/rate-limit";
 import type { Category, Topic } from "@/sanity/queries";
 
 import type {
@@ -16,6 +17,7 @@ import type {
   CmsImage,
   ContentSource,
   LexicalNode,
+  SubscribeOutcome,
   TopicWithArticles,
 } from "./types";
 
@@ -228,6 +230,61 @@ async function findBySlug<T>(collection: string, slug: string) {
   return docs[0] ?? null;
 }
 
+// ---- Newsletter signup ----------------------------------------------------
+
+/**
+ * Per visitor: at most 5 signup attempts in 10 minutes. Visitors whose address
+ * the website cannot see share one bucket with a larger allowance, so a proxy
+ * that hides addresses does not lock everyone out.
+ */
+const SIGNUP_WINDOW_MS = 10 * 60 * 1000;
+const SIGNUP_MAX_PER_VISITOR = 5;
+const SIGNUP_MAX_UNKNOWN_VISITORS = 30;
+const signupLimiter = createRateLimiter({ windowMs: SIGNUP_WINDOW_MS });
+
+/** For tests. */
+export function resetSignupLimit() {
+  signupLimiter.reset();
+}
+
+async function addSubscriberToCms(
+  email: string,
+  client: string,
+): Promise<SubscribeOutcome> {
+  const secret = process.env.CMS_SUBSCRIBE_SECRET;
+  if (!secret) {
+    // Server Functions are reachable directly, so a missing secret fails
+    // closed instead of silently doing nothing.
+    return { ok: false, error: "Signups are not open yet — please try again later." };
+  }
+
+  const max = client === "unknown" ? SIGNUP_MAX_UNKNOWN_VISITORS : SIGNUP_MAX_PER_VISITOR;
+  if (!signupLimiter.allow(client, max)) {
+    return { ok: false, error: "Too many attempts — please try again in a few minutes." };
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl()}/api/newsletter-subscribers/subscribe`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-subscribe-secret": secret },
+      body: JSON.stringify({ email }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch {
+    return { ok: false, error: "Something went wrong — please try again." };
+  }
+
+  if (response.ok) return { ok: true };
+  if (response.status === 400) return { ok: false, error: "Enter a valid email address." };
+  if (response.status === 429) {
+    return { ok: false, error: "Too many attempts — please try again in a few minutes." };
+  }
+  // 401/503 mean the two sides are misconfigured; the visitor cannot fix that.
+  return { ok: false, error: "Signups are not open yet — please try again later." };
+}
+
 export const cmsSource: ContentSource = {
   async getLatestArticles(limit) {
     const { articles } = await articleList(
@@ -420,5 +477,9 @@ export const cmsSource: ContentSource = {
       publishedAt: doc.publishedAt ?? null,
       updatedAt: doc.updatedAt ?? null,
     }));
+  },
+
+  addSubscriber(email, { client }) {
+    return addSubscriberToCms(email, client);
   },
 };

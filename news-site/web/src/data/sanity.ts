@@ -4,7 +4,7 @@
  * wrapped as `{ format: "portableText" }` so the renderer can tell them apart
  * from the CMS's Lexical bodies.
  */
-import { client } from "@/sanity/client";
+import { client, writeClient } from "@/sanity/client";
 import {
   ALL_CATEGORIES_QUERY,
   ARTICLE_QUERY,
@@ -130,5 +130,42 @@ export const sanitySource: ContentSource = {
 
   getSitemapArticles() {
     return client.fetch<SitemapArticle[]>(SITEMAP_QUERY);
+  },
+
+  // Newsletter (moved here unchanged from the signup action)
+
+  async addSubscriber(email, { referer }) {
+    let writer;
+    try {
+      writer = writeClient();
+    } catch {
+      // Server Functions are reachable directly, not just through the form, so
+      // a missing token must fail closed rather than silently no-op.
+      return {
+        ok: false,
+        error: "Signups are not open yet — please try again later.",
+      };
+    }
+
+    const existing = await writer.fetch<string | null>(
+      `*[_type == "newsletterSubscriber" && email == $email][0]._id`,
+      { email },
+    );
+
+    if (existing) {
+      // Already on the list — this is success from the visitor's point of view.
+      return { ok: true };
+    }
+
+    const source = referer ? new URL(referer).pathname : null;
+
+    await writer.create({
+      _type: "newsletterSubscriber",
+      email,
+      subscribedAt: new Date().toISOString(),
+      source,
+    });
+
+    return { ok: true };
   },
 };

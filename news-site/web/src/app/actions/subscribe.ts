@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 
-import { writeClient } from "@/sanity/client";
+import { addSubscriber } from "@/data";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,37 +28,14 @@ export async function subscribe(
     return { ok: false, error: "Enter a valid email address." };
   }
 
-  let client;
-  try {
-    client = writeClient();
-  } catch {
-    // Server Functions are reachable directly, not just through this form, so
-    // a missing token must fail closed rather than silently no-op.
-    return {
-      ok: false,
-      error: "Signups are not open yet — please try again later.",
-    };
-  }
+  // Which backend stores the address (Sanity or the CMS) is decided in the
+  // data layer by CONTENT_SOURCE; this action only checks the form.
+  const requestHeaders = await headers();
+  const forwarded = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const client = forwarded || requestHeaders.get("x-real-ip") || "unknown";
 
-  const existing = await client.fetch<string | null>(
-    `*[_type == "newsletterSubscriber" && email == $email][0]._id`,
-    { email },
-  );
-
-  if (existing) {
-    // Already on the list — this is success from the visitor's point of view.
-    return { ok: true };
-  }
-
-  const referer = (await headers()).get("referer");
-  const source = referer ? new URL(referer).pathname : null;
-
-  await client.create({
-    _type: "newsletterSubscriber",
-    email,
-    subscribedAt: new Date().toISOString(),
-    source,
+  return addSubscriber(email, {
+    client,
+    referer: requestHeaders.get("referer"),
   });
-
-  return { ok: true };
 }

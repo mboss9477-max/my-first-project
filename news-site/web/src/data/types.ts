@@ -104,6 +104,17 @@ export type NewsSitemapItem = {
 
 export type SitemapArticle = { slug: string; publishedAt: string | null };
 
+/** The result of a newsletter signup, in words the visitor can be shown. */
+export type SubscribeOutcome = { ok: true } | { ok: false; error: string };
+
+/** What the signup action knows about the request, for the backend to use. */
+export type SubscribeContext = {
+  /** Who is asking (a network address as seen by the website), used only to limit abuse. Never stored or logged. */
+  client: string;
+  /** The `Referer` header, if any (Sanity records the page the signup came from). */
+  referer: string | null;
+};
+
 /** Everything a backend must provide. `data/index.ts` picks one. */
 export interface ContentSource {
   getLatestArticles(limit: number): Promise<ArticleListItem[]>;
@@ -129,4 +140,6 @@ export interface ContentSource {
   getFeedItems(): Promise<FeedItem[]>;
   getNewsSitemapItems(sinceIso: string): Promise<NewsSitemapItem[]>;
   getSitemapArticles(): Promise<SitemapArticle[]>;
+  /** Adds a newsletter subscriber. `email` is already trimmed, lower-cased and checked. */
+  addSubscriber(email: string, context: SubscribeContext): Promise<SubscribeOutcome>;
 }
