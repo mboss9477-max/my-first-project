@@ -11,6 +11,7 @@ import { Media } from './collections/Media'
 import { NewsletterSubscribers } from './collections/NewsletterSubscribers'
 import { Authors, Categories, Topics } from './collections/Taxonomy'
 import { Users } from './collections/Users'
+import { WriterNotes } from './collections/WriterNotes'
 import { databaseAdapter } from './database'
 
 const filename = fileURLToPath(import.meta.url)
@@ -38,7 +39,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Articles, Categories, Topics, Authors, Media, NewsletterSubscribers, Users],
+  collections: [Articles, Categories, Topics, Authors, Media, NewsletterSubscribers, WriterNotes, Users],
   // Several languages, with only English filled in for now (task 1.8a). The
   // other languages are configured so the database is built for them from the
   // start; adding content later is just editing, not a data migration.
