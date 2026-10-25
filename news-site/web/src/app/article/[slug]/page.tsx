@@ -9,10 +9,10 @@ import { ReadingProgress } from "@/components/ReadingProgress";
 import { RelatedArticles } from "@/components/RelatedArticles";
 import { ShareLinks } from "@/components/ShareLinks";
 import { formatDate } from "@/lib/format";
-import { readingTime } from "@/lib/reading-time";
+import { hasBodyContent, readingTime } from "@/lib/reading-time";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getArticle, getArticleSlugs, type Article } from "@/data";
-import { displayDimensions, urlForImage } from "@/sanity/image";
+import { displayDimensions, imageUrl } from "@/data/image";
 
 export const revalidate = 60;
 
@@ -27,11 +27,7 @@ export async function generateStaticParams() {
 /** 1200x630 crop of the hero, the conventional Open Graph card size. */
 function socialImage(article: Article) {
   if (!article.heroImage) return null;
-  return urlForImage(article.heroImage)
-    .width(1200)
-    .height(630)
-    .fit("crop")
-    .url();
+  return imageUrl(article.heroImage, { width: 1200, height: 630 });
 }
 
 export async function generateMetadata({
@@ -227,7 +223,7 @@ export default async function ArticlePage({
         {hero && heroSize ? (
           <figure className="fade-in mt-8">
             <Image
-              src={urlForImage(hero).width(heroSize.width).url()}
+              src={imageUrl(hero, { width: heroSize.width })}
               alt={hero.alt ?? ""}
               width={heroSize.width}
               height={heroSize.height}
@@ -248,7 +244,7 @@ export default async function ArticlePage({
         ) : null}
 
         <div className="fade-in mt-8 text-lg">
-          {article.body?.length ? (
+          {hasBodyContent(article.body) && article.body ? (
             <ArticleBody value={article.body} />
           ) : (
             <p className="text-ink-soft">This article has no body content yet.</p>

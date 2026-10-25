@@ -2,15 +2,16 @@ import Image from "next/image";
 import {
   PortableText,
   type PortableTextComponents,
-  type PortableTextBlock,
 } from "@portabletext/react";
 import type { SanityImageSource } from "@sanity/image-url";
 
+import type { ArticleBodyData } from "@/data";
 import {
   displayDimensions,
-  urlForImage,
+  imageUrl,
   type ImageDimensions,
-} from "@/sanity/image";
+} from "@/data/image";
+import { LexicalBody } from "./LexicalBody";
 
 type InlineImage = SanityImageSource & {
   alt?: string | null;
@@ -25,7 +26,7 @@ function InlineImageView({ value }: { value: InlineImage }) {
   return (
     <figure className="my-8">
       <Image
-        src={urlForImage(value).width(size.width).url()}
+        src={imageUrl(value, { width: size.width })}
         alt={value.alt ?? ""}
         width={size.width}
         height={size.height}
@@ -94,6 +95,8 @@ const components: PortableTextComponents = {
   },
 };
 
-export function ArticleBody({ value }: { value: PortableTextBlock[] }) {
-  return <PortableText value={value} components={components} />;
+/** Renders an article body from either backend's rich-text format. */
+export function ArticleBody({ value }: { value: ArticleBodyData }) {
+  if (value.format === "lexical") return <LexicalBody root={value.root} />;
+  return <PortableText value={value.blocks} components={components} />;
 }

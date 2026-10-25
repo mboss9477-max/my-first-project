@@ -6,7 +6,7 @@ import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/format";
 import { PLACEHOLDER_ARTICLES } from "@/lib/placeholder-articles";
 import { getLatestArticles, type ArticleListItem } from "@/data";
-import { urlForImage } from "@/sanity/image";
+import { imageUrl } from "@/data/image";
 
 // Re-fetch from Sanity at most once a minute.
 export const revalidate = 60;
@@ -45,7 +45,7 @@ function CardImage({
 }) {
   const hero = article.heroImage;
   const src = hero
-    ? urlForImage(hero).width(1200).height(800).fit("crop").url()
+    ? imageUrl(hero, { width: 1200, height: 800 })
     : // Decorative stock photo standing in for unpublished content, so alt="".
       article.placeholderImage;
 
