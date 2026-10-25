@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   // Search result pages carry no value for a crawler and can generate
   // effectively infinite URLs, so keep them out of the index.
   robots: { index: false, follow: true },
+  // Its own address: the root layout's default canonical is the home page,
+  // which contradicted the noindex above.
+  alternates: { canonical: "/search" },
 };
 
 export default async function SearchPage({
