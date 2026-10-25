@@ -11,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/search", "/api/"],
     },
     sitemap: [`${SITE_URL}/sitemap.xml`, `${SITE_URL}/news-sitemap.xml`],
-    host: SITE_URL,
+    host: new URL(SITE_URL).host,
   };
 }

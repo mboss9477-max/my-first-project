@@ -15,9 +15,12 @@ export const contentType = "image/png";
 export default async function Image({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const article = await getArticle(params.slug);
+  // Next 16: params is async. Reading params.slug directly gave undefined, the
+  // article lookup failed and every share image answered HTTP 500.
+  const { slug } = await params;
+  const article = await getArticle(slug);
 
   const headline = article?.headline ?? SITE_NAME;
   const category = article?.category ?? null;
