@@ -10,12 +10,9 @@ import { describe, expect, it } from "vitest";
 const SRC = path.resolve(__dirname, "../src");
 const FORBIDDEN = /from\s+["']@\/sanity\/(client|queries)["']/;
 
-// Known exceptions, each with the reason and where it gets removed.
-const ALLOWED = new Set([
-  // Newsletter signups write through Sanity's write client; moves to the CMS
-  // with the rest of the write path (plan task 1.9).
-  "app/actions/subscribe.ts",
-]);
+// Known exceptions, each with the reason and where it gets removed. None now:
+// the newsletter signup went through the seam too (runbook gap G-1).
+const ALLOWED = new Set<string>([]);
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

@@ -6,7 +6,7 @@
  */
 import { cmsSource } from "./cms";
 import { sanitySource } from "./sanity";
-import type { ContentSource } from "./types";
+import type { ContentSource, SubscribeContext } from "./types";
 
 export type {
   Article,
@@ -24,6 +24,8 @@ export type {
   LexicalNode,
   NewsSitemapItem,
   SitemapArticle,
+  SubscribeContext,
+  SubscribeOutcome,
   Topic,
   TopicRef,
   TopicWithArticles,
@@ -63,3 +65,8 @@ export const getFeedItems = () => source.getFeedItems();
 export const getNewsSitemapItems = (sinceIso: string) =>
   source.getNewsSitemapItems(sinceIso);
 export const getSitemapArticles = () => source.getSitemapArticles();
+
+// Newsletter
+
+export const addSubscriber = (email: string, context: SubscribeContext) =>
+  source.addSubscriber(email, context);
