@@ -14,6 +14,8 @@ Read in this order when starting cold:
 | [`backend-design.md`](backend-design.md) | Why Payload, Postgres and a separate CMS; options considered, verified facts |
 | [`backend-plan.md`](backend-plan.md) | Task-level plan for the backend phases, gates and cutover |
 | [`backend-trial-report.md`](backend-trial-report.md) | Results of the Phase 0 trial |
+| [`staging-plan.md`](staging-plan.md) | The server steps for staging, each needing the owner's go-ahead; nothing in it has been done |
+| [`cutover-runbook.md`](cutover-runbook.md) | The day of the switch from Sanity to the new CMS, with rollback and a log to fill in |
 | [`threat-model.md`](threat-model.md) | Threats T1 to T25, mitigations and status |
 | [`progress-checklist.md`](progress-checklist.md) | Per change: what the author checked, what the other agent tested |
 | [`writer-walkthrough.md`](writer-walkthrough.md) | Acceptance checklist for a non-technical writer |

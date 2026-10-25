@@ -73,6 +73,7 @@ The other agent edits an area only through a claimed task (see Workflow) with th
 9. A rebase conflict in a file you do not own: do not guess. Comment on the PR and ask the owner via the human.
 10. Urgent production fix: the human may authorise either agent to fast-track (still a PR, CI green, human approval). Write the handoff afterwards.
 11. **Keep `docs/progress-checklist.md` current.** Every PR adds or updates its row: the author records the exact checks run; the reviewer records only what they ran themselves, with the PR comment as evidence. A change merged before its review is marked ⚠️ and tested after the merge; findings are fixed forward.
+12. **Review requests and reports.** Every GitHub issue that asks for a review states the exact commands and the numbers to expect (for example "npm test = 95 passed, 1 skipped"), has a line "Not verified by the author:" listing what was not tested, tells the reviewer to cite the CI log (and say so) for anything it cannot run itself, and ends by telling it to update its column in `docs/progress-checklist.md` and close the issue; and every report to the owner ends with a short paste-ready prompt for Gemini in a code block naming the issue and PR numbers.
 
 ## Handoff
 
