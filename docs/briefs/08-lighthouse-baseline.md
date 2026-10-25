@@ -65,9 +65,9 @@ Although performance scores are strong, Lighthouse flagged five distinct optimiz
 - **Impact**: LCP on mobile currently ranges from **2.52 s to 3.85 s** (LCP audit score 0.54 – 0.89).
 - **Component / File**:
   - Home: Lead card hero image in [page.tsx](file:///C:/Users/mboss/Projects/my-first-project-gemini/news-site/web/src/app/page.tsx#L66) (`<CardImage>`)
-  - Article: Hero image in [page.tsx](file:///C:/Users/mboss/Projects/my-first-project-gemini/news-site/web/src/app/article/[slug]/page.tsx#L140)
-- **Issue**: LCP images are rendered without `priority={true}` or `<link rel="preload">` in `<head>`. The browser only initiates the image request after DOM parsing and layout calculation.
-- **Suggested Improvement**: Add `priority` to the above-the-fold lead story image on the front page and the article hero image in Next.js `<Image priority={true} ... />`.
+  - Article: Hero image in [page.tsx](file:///C:/Users/mboss/Projects/my-first-project-gemini/news-site/web/src/app/article/[slug]/page.tsx#L230) — *already carries `priority`*.
+- **Issue**: On the homepage, the lead story hero image is rendered inside `<CardImage>` without `priority` or `<link rel="preload">` in `<head>`. The browser only initiates the image request after DOM parsing and layout calculation. (In contrast, the article detail page hero image at line 230 already specifies `priority`, correctly triggering early preloading).
+- **Suggested Improvement**: Add `priority` to the above-the-fold lead story image on the front page (`<CardImage priority={true} ... />` or `<Image priority ... />`).
 
 ### 3. Accessible Name Mismatch on Menu Button (`label-content-name-mismatch`)
 - **Impact**: Diagnostic flagged on all 36 audit runs (Audit score 0 / failed).

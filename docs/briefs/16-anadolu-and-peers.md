@@ -12,11 +12,18 @@
 
 Anadolu Agency (AA, *Anadolu Ajansı*, Ankara) is the state news agency of Türkiye, broadcasting in **13 language editions** (Turkish, English, Arabic, Russian, French, Spanish, Bosnian/Croatian/Serbian, Kurmanji Kurdish, Sorani Kurdish, Persian, Albanian, Macedonian, and Indonesian).
 
-In newsroom software architecture, an "Anadolu-style" multilingual setup signifies:
-1. **Edition-Driven, Not Translation-Mirrored:** Each language is treated as an autonomous *editorial edition* with its own homepage curation, headlines, and regional priorities, rather than a robotic 1:1 mirror of the home-country edition.
-2. **Dedicated Language Desks:** Stories are produced, translated, adapted, or localized by specialized language desks (e.g. English News Desk, Arabic News Desk) where bilingual journalists adapt context rather than performing literal machine substitution.
-3. **Subfolder URL Architecture:** All editions live on the single apex domain under two-letter ISO language path prefixes (`aa.com.tr/en/`, `aa.com.tr/ar/`, `aa.com.tr/fr/`), retaining consolidated SEO domain authority while maintaining clear content boundaries.
-4. **Independent Article Lifecycles:** An article written by the Turkish desk may be translated by the English and Arabic desks with different headlines, localized excerpts, and independent publication timestamps. Articles that lack translation simply exist only in their native edition.
+### Directly Observed in Page Source & DOM (`aa.com.tr`):
+1. **URL Architecture:** All 13 editions reside on the single apex domain under two-letter path prefixes (`https://www.aa.com.tr/tr/`, `/en/`, `/ar/`, `/ru/`, `/fr/`, `/es/`, `/fa/`, etc.).
+2. **Top Utility Bar Switcher:** A persistent horizontal strip across the top header contains direct anchor links (`<a>`) to every active language. Active language is distinguished with CSS class styling.
+3. **Directionality & Typography:** The Arabic edition (`/ar/`) explicitly specifies `<html dir="rtl" lang="ar">`, with mirrored header, navigation, and right-aligned Arabic typography. The English edition specifies `<html lang="en">` (LTR).
+4. **Hreflang Tags:** The `<head>` of edition homepages contains full reciprocal `<link rel="alternate" hreflang="xx" href="https://www.aa.com.tr/xx/">` tags for all 13 editions.
+5. **Untranslated Article Behavior:** When inspecting an article page on `/en/`, the language switcher links in the top header do **not** point to translated versions of the article; their `href` attributes route directly to the respective edition homepages (`/tr/`, `/ar/`, etc.).
+6. **Autonomous Editorial Content:** Comparing `/tr/`, `/en/`, and `/ar/` at the same timestamp reveals entirely different lead headlines, story lineups, and category hierarchies, confirming that each edition is an independently curated news feed rather than a translated mirror.
+
+### Inferred from Public Newsroom Statements & Secondary Analysis:
+1. **Central Wire vs. Regional Desks:** Public corporate profiles state that breaking Turkish domestic reporting is published centrally, whereas regional language desks (English, Arabic, Balkan, French) select, adapt, or originate reporting tailored to their target audience.
+2. **Asynchronous Adaptation:** Stories are translated and adapted asynchronously by native-speaking journalists rather than published synchronously via automated CMS pipelines.
+3. **Internal Desk Tooling:** AA's proprietary newsroom CMS and workflow queues were not directly accessed or inspected (internal to the agency).
 
 ---
 

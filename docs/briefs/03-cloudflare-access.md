@@ -120,16 +120,15 @@ Official limits for the **Zero Trust Free plan**:
 ## 7. Is a payment method required just to enable free Zero Trust? (One community post reported an unexpected consent prompt; find the official position.)
 
 ### Answer:
-**Yes.** Official Cloudflare documentation and onboarding workflows confirm that **a valid payment method (credit card or PayPal) is required on file to initialize and activate a Cloudflare Zero Trust organization**, even when selecting the 100% Free plan.
+**UNVERIFIED (Official documentation does not state this; only community forum reports exist).**
 
-- **Official Position**: Cloudflare requires a billing profile setup during the Zero Trust initial onboarding wizard for account verification, identity validation, and overage/upgrade handling.
-- **Charges**: Users on the Free tier are **not charged** as long as usage remains within the free tier thresholds (up to 50 user seats).
-- **Explanation of Community Consent Prompts**: During signup, the billing modal presents terms of service and authorization consent (which can appear as a purchase or payment authorization prompt), even when the monthly total is `$0.00`.
-- **Project Boundary Compliance (Rule S3 & S5)**: Because the owner has established that no payment methods, billing details, or card authorizations may be entered by AI agents, **only the owner can complete the Zero Trust onboarding wizard if a payment profile is required**.
+- **Official Documentation**: Cloudflare's public pricing and Zero Trust setup pages do not state that a credit card or billing profile is mandatory to initialize an organization on the 50-seat Free tier.
+- **Community Forum Reports**: Multiple community threads report that the onboarding wizard can prompt users with a payment authorization modal (displaying a $0.00 charge agreement) before provisioning Zero Trust capabilities. Because Cloudflare frequently adjusts onboarding flows by geography and account age, whether an account without a billing method can complete setup without entering a card cannot be confirmed from official documentation alone.
+- **Project Boundary Compliance (Rule S3 & S5)**: Because no payment methods or billing authorizations may be handled by AI agents, only the human owner can verify whether their specific Cloudflare account encounters a card prompt during Zero Trust activation.
 
-- **Source URL:** `https://developers.cloudflare.com/cloudflare-one/setup/` (and `https://www.cloudflare.com/plans/zero-trust-services/`)
+- **Source URL:** `https://developers.cloudflare.com/cloudflare-one/setup/` (Active, but payment card requirement is unstated).
 - **Date Read:** 2026-10-25
-- **Confidence:** **confirmed**
+- **Confidence:** **UNVERIFIED** (No official confirmation of mandatory payment method).
 
 ---
 
@@ -147,17 +146,20 @@ While path scoping **is** supported on the Free tier, if the owner decides **not
   - Access to `/admin` or `/api/users` on this subdomain is blocked by Traefik middleware or Payload collection access hooks.
 - **Cost**: **$0** (uses existing DNS records and Coolify reverse proxy).
 
-### Fallback Option B: Native Payload CMS Authentication & Lockout (Already Implemented)
-- The codebase already incorporates hardened, verified application-level security:
-  - 5-attempt brute-force account lockout with exponential backoff (PR #16 / Threat T1).
-  - CSRF origin validation.
-  - Per-IP rate limiting on authentication routes (PR #43 / Threat T4).
+### Fallback Option B: Native Payload CMS Authentication & Lockout (Baseline Only; Does NOT Satisfy T8)
+- The codebase incorporates the following application-level protections:
+  - Account lockout (Threat T1): 5 wrong password attempts lock that specific account for 10 minutes (`Users.ts` lines 15-18). *Note:* This is an **account-level lock only** (not per-IP rate limiting, and does not implement exponential backoff).
+  - Two-hour session token expiration (`Users.ts` line 21 / Threat T4).
+  - CSRF origin validation (`payload.config.ts` line 33 / Threat T5).
   - Admin-only access controls on user collections.
-- Procedure: The owner sets the first admin password immediately upon first container boot (Staging Step S5) before sharing the staging URL.
-- **Cost**: **$0**, requires zero third-party services or credit card profiles.
+- **Critical Limitation regarding Threat T8**:
+  - `docs/threat-model.md` Threat **T8** ("Admin panel exposed to the internet") explicitly specifies that Phase 1 **requires** either 2FA or an identity-aware access gate (such as Cloudflare Access) in front of the admin panel.
+  - Leaving the admin panel publicly accessible on the internet relying solely on native Payload username/password authentication **does NOT satisfy Threat T8**. It is an unhardened fallback and should only be used temporarily during local/isolated staging before staff accounts are created.
+- **Cost**: **$0**, but fails Threat T8 compliance without a fronting access gate.
 
-### Fallback Option C: Traefik Basic Auth Middleware in Coolify
-- Coolify's underlying Traefik proxy supports HTTP Basic Auth middleware scoped directly to the `/admin` path prefix on the single CMS hostname.
+### Fallback Option C: Traefik Basic Auth Middleware in Coolify (Recommended $0 Fallback)
+- Coolify's underlying Traefik proxy supports HTTP Basic Auth middleware scoped directly to the `/admin` path prefix on the CMS hostname.
+- Provides an external access barrier in front of Payload's login screen, partially fulfilling the access gate requirement of T8 without requiring Cloudflare Zero Trust.
 - **Cost**: **$0**, configured directly in Coolify without external vendor dependencies.
 
 ---
@@ -165,10 +167,10 @@ While path scoping **is** supported on the Free tier, if the owner decides **not
 ## Recommendation
 
 1. **Path Scoping Is Supported on Free**: Cloudflare Access path scoping (`/admin*`, `/api/users*`) is confirmed available on the Zero Trust Free tier up to 50 seats.
-2. **Billing Profile Prerequisite**: However, Cloudflare Zero Trust onboarding **requires a credit card or billing profile on file** to initialize the organization, even for the $0 Free plan.
+2. **Billing Profile Prerequisite**: **UNVERIFIED**. If Cloudflare prompts for a credit card during onboarding, the owner must decide whether to provide one.
 3. **Recommended Action**:
-   - If the owner is comfortable adding a card to Cloudflare for identity verification on the $0 Free tier, proceed with Staging Step S6 using path-scoped Access rules and Email One-Time PIN (OTP).
-   - If the owner prefers **not** to place a payment card on file with Cloudflare, **adopt Fallback Option B (Native Payload Security) or Option C (Coolify Traefik Middleware)**. The CMS is already fully hardened against brute-force attacks and unauthorized user registration, satisfying all security criteria without payment dependencies.
+   - If the owner can activate Cloudflare Zero Trust without a card (or is comfortable providing one for $0 identity verification), proceed with Staging Step S6 using path-scoped Access rules and Email One-Time PIN (OTP). This fully satisfies Threat T8.
+   - If Zero Trust is declined or unavailable without payment, **adopt Fallback Option C (Traefik Basic Auth Middleware in Coolify)** to place an authentication gate in front of `/admin`. Native Payload authentication alone (Option B) does **not** satisfy Threat T8.
 
 ---
 
