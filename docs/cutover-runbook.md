@@ -15,6 +15,7 @@
 
 ## 1. Preconditions: do not start until every box is ticked
 
+- [ ] Task 1.8a (the language-readiness spike) is done and its decision applied **before the first migration**; if languages are switched on in the CMS, the migration script and data layer were updated and re-tested first.
 - [ ] Quality gate G1 passed (`docs/backend-plan.md`): a writer worked unaided, a publish shows within 60 s, a clean migration report, a restore proven on a clean machine, CI green, Phase 1 threat items done, memory measured under load.
 - [ ] The cutover and the rollback were **rehearsed on staging**, and the timings are written in a handoff (how long the website build takes; how long a rollback takes).
 - [ ] **Known gaps are closed or accepted by the owner** (section 2).
