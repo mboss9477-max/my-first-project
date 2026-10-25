@@ -2,7 +2,7 @@
 
 **Status:** a draft, to be rehearsed on staging (`docs/staging-plan.md`) before it is trusted. Nothing here has been run against production. Plan tasks 1.15 (rollback plan) and 1.18 (cutover).
 
-**What "cutover" means:** the live website at https://csnews.news stops reading Sanity and starts reading the new CMS. Writers move to the new CMS. Sanity stays untouched and read-only for 30 days, then the owner decides whether to shut it down (Sanity is never shut down automatically).
+**What "cutover" means:** the live website at https://csnews.news stops reading Sanity and starts reading the new CMS. Writers move to the new CMS. Sanity stays untouched and read-only for **7 days** (the owner's decision of 2026-10-25, shortened from 30), then it is removed from the repository. Shutting down the Sanity project itself stays a separate decision for the owner (S5); nothing is shut down automatically.
 
 **The switch is one setting.** The website reads its content through `news-site/web/src/data`. The environment variable `CONTENT_SOURCE` picks the source: unset or `sanity` means Sanity; `cms` means the new CMS (with `CMS_URL` giving its address). Switching, and switching back, are both "change that setting in Coolify and redeploy". No code change is needed on the day.
 
@@ -31,13 +31,13 @@ These are things the new CMS or the website still do differently from Sanity. Ea
 
 | # | Gap | What happens at cutover if left | Options |
 |---|-----|--------------------------------|---------|
-| G-1 | **Newsletter signup** (`app/actions/subscribe.ts`) still writes to Sanity | New signups keep going into Sanity, which is meant to be read-only; the CMS list stays empty | Port the signup to the CMS before cutover (recommended), or accept it for the 30 days and import the subscribers afterwards. Check first how many subscribers exist in Sanity (the public API showed none on 2026-10-25). |
+| G-1 | **Newsletter signup** (`app/actions/subscribe.ts`) still writes to Sanity | New signups keep going into Sanity, which is meant to be read-only; the CMS list stays empty | Port the signup to the CMS before cutover (recommended), or accept it for the 7 days and import the subscribers afterwards. Check first how many subscribers exist in Sanity (the public API showed none on 2026-10-25). |
 | G-2 | **Draft preview** (`/api/draft-mode`) is Sanity-only | Writers cannot preview an unpublished story on the live site | Accept (the admin shows the draft), or build preview for the CMS later. |
 | G-3 | **Author portraits**: Sanity authors can have a portrait, the CMS authors collection has no portrait field | The migration report marks any author with a portrait as a problem; none has one today | Add the field (a database migration, S18) if any author gets a portrait before cutover. |
 | G-4 | **Search** covers headline and excerpt only in CMS mode | Searching for a word that only appears in an article's body finds nothing | Accept until full-text search (plan task 2.5). |
 | G-5 | Inline body images, lists, quotes and links are covered by tests but no live article uses them | A real article may reveal a rendering problem | Before cutover, publish one test article with each feature on staging and look at it. |
 | G-6 | Image hosts and the content security policy must name the production CMS host | Images fail to load in browsers | `CMS_PUBLIC_URL` (or `CMS_URL`) is read by `next.config.ts` at build time; confirm in the rehearsal that no CSP errors appear. |
-| G-7 | Sanity's `/api/revalidate` route and `SANITY_*` settings remain on the website | Harmless; they simply stop mattering | Remove later, in a separate cleanup PR, after the 30 days. |
+| G-7 | Sanity's `/api/revalidate` route and `SANITY_*` settings remain on the website | Harmless; they simply stop mattering | Remove in the cleanup PR after the 7 days. |
 
 ## 3. The cutover, step by step
 
@@ -100,10 +100,10 @@ Run all of these against https://csnews.news, in a normal browser and a private 
 
 ## 7. After cutover
 
-- Keep Sanity running and read-only for 30 days (the owner's rule). Writers do not edit there.
+- Keep Sanity running and read-only for **7 days** (the owner's decision of 2026-10-25). Writers do not edit there.
 - First week: watch the site daily (errors, speed, images), and the CMS's memory.
-- At 30 days the owner decides whether to shut Sanity down (S5). Until then nothing in Sanity is deleted.
-- Cleanup PRs afterwards: remove the Sanity read path and settings (`G-7`), update `docs/PROJECT_CONTEXT.md` and `README.md`, close the plan task.
+- On day 7: **tag the last commit that still has the old content tool** (`git tag pre-sanity-removal`, so the code can always be recovered), then remove it from the repository (the cleanup PR below). After that, **rolling back with the switch is no longer possible**; the way back is the backup taken before cutover. The owner decides separately whether to shut down the Sanity project itself (S5); until then its data is not deleted.
+- Cleanup PRs afterwards: delete `news-site/studio`, `web/src/sanity`, the Sanity data layer and its settings, dependencies, CI and README mentions (`G-7`), update `docs/PROJECT_CONTEXT.md` and `README.md`, close the plan task.
 
 ## 8. Log (fill in during the cutover)
 
