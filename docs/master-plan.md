@@ -102,6 +102,7 @@ Acceptance: `main` contains every document above; `gh pr list` shows no stale PR
 | 3.1 | Writer walkthrough (`docs/writer-walkthrough.md`) run with a real writer, the owner's father | Owner, Gemini | ⏳ after 1.9 |
 | 3.2 | Create real writer and editor accounts (owner sets the passwords) | Owner | ⏳ |
 | 3.3 | Test the loop: writer drafts, marks "Ready for review", editor publishes | Owner | ⏳ |
+| 3.4 | **Writer notes:** a writer leaves a note about a story, editors read it and mark it resolved (store and view in the admin; built, PR in review). **Email of new notes to the team comes later**, once a mail provider is chosen and the cost approved (owner decision: design and website first) | Claude | 🔄 store and view built; email ⏳ owner |
 
 ### Launch gate L1
 **Launch = M0, M1, M2, M3 complete.** The owner may reorder; a launch before M1 would mean the family writes in Sanity.

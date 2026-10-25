@@ -73,6 +73,7 @@ export interface Config {
     authors: Author;
     media: Media;
     'newsletter-subscribers': NewsletterSubscriber;
+    'writer-notes': WriterNote;
     users: User;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -88,6 +89,7 @@ export interface Config {
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'newsletter-subscribers': NewsletterSubscribersSelect<false> | NewsletterSubscribersSelect<true>;
+    'writer-notes': WriterNotesSelect<false> | WriterNotesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -339,6 +341,27 @@ export interface NewsletterSubscriber {
   createdAt: string;
 }
 /**
+ * Messages from the newsroom about a story. Editors read them and mark them resolved.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "writer-notes".
+ */
+export interface WriterNote {
+  id: number;
+  /**
+   * The story this note is about.
+   */
+  article: number | Article;
+  /**
+   * What the editors should know. Plain text, up to 2000 characters.
+   */
+  text: string;
+  status?: ('open' | 'resolved') | null;
+  createdBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -477,6 +500,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'newsletter-subscribers';
         value: number | NewsletterSubscriber;
+      } | null)
+    | ({
+        relationTo: 'writer-notes';
+        value: number | WriterNote;
       } | null)
     | ({
         relationTo: 'users';
@@ -647,6 +674,18 @@ export interface MediaSelect<T extends boolean = true> {
 export interface NewsletterSubscribersSelect<T extends boolean = true> {
   email?: T;
   subscribedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "writer-notes_select".
+ */
+export interface WriterNotesSelect<T extends boolean = true> {
+  article?: T;
+  text?: T;
+  status?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
