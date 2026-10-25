@@ -15,6 +15,7 @@ Read in this order when starting cold:
 | [`backend-plan.md`](backend-plan.md) | Task-level plan for the backend phases, gates and cutover |
 | [`backend-trial-report.md`](backend-trial-report.md) | Results of the Phase 0 trial |
 | [`staging-plan.md`](staging-plan.md) | The server steps for staging, each needing the owner's go-ahead; nothing in it has been done |
+| [`localization-spike.md`](localization-spike.md) | Task 1.8a: is the CMS ready for several languages? The eleven answers, the decision (go) and what it found |
 | [`cutover-runbook.md`](cutover-runbook.md) | The day of the switch from Sanity to the new CMS, with rollback and a log to fill in |
 | [`threat-model.md`](threat-model.md) | Threats T1 to T25, mitigations and status |
 | [`progress-checklist.md`](progress-checklist.md) | Per change: what the author checked, what the other agent tested |

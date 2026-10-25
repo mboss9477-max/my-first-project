@@ -65,7 +65,7 @@ Each step: **what**, **who**, **check**, **undo**. "Owner OK" means a go in chat
 ### S3. Postgres
 - **What:** create a Postgres 17 database in Coolify, internal network only, with a persistent volume and a memory limit. Coolify generates the password; it is never typed into chat or the repo.
 - **Who:** owner and Claude together in the Coolify panel; owner OK.
-- **Check:** from the CMS container later (S4) a migration succeeds; from outside, the database port is closed.
+- **Check:** the database encoding is UTF-8: run `SHOW server_encoding;` and expect `UTF8` (Arabic and Chinese text cannot be stored otherwise; found by the language spike); from the CMS container later (S4) a migration succeeds; from outside, the database port is closed.
 - **Undo:** delete the resource (it is empty).
 
 ### S4. The CMS application

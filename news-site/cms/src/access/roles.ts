@@ -4,6 +4,17 @@ export type Role = 'admin' | 'editor' | 'writer'
 
 type MaybeUser = { id?: number | string; role?: Role | null } | null | undefined
 
+/**
+ * True when a save asks for "published". With a publish status per language the
+ * status can arrive as a word ("published") or as an object keyed by language
+ * ({ en: "published" }); either way, asking to publish any language counts.
+ */
+export const asksToPublish = (status: unknown): boolean => {
+  if (status === 'published') return true
+  if (typeof status === 'object' && status !== null) return Object.values(status).some((value) => value === 'published')
+  return false
+}
+
 export const hasRole = (user: MaybeUser, ...roles: Role[]) =>
   Boolean(user?.role && roles.includes(user.role))
 

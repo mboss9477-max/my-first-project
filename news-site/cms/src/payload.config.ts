@@ -39,6 +39,24 @@ export default buildConfig({
     },
   },
   collections: [Articles, Categories, Topics, Authors, Media, NewsletterSubscribers, Users],
+  // Several languages, with only English filled in for now (task 1.8a). The
+  // other languages are configured so the database is built for them from the
+  // start; adding content later is just editing, not a data migration.
+  // Publish status per language (Payload marks this experimental): without it,
+  // an unfinished Spanish draft goes public the moment English is published.
+  experimental: { localizeStatus: true },
+  localization: {
+    locales: [
+      { label: 'English', code: 'en' },
+      { label: 'Español', code: 'es' },
+      { label: '中文', code: 'zh' },
+      { label: 'العربية', code: 'ar', rtl: true },
+    ],
+    defaultLocale: 'en',
+    // A language without its own text shows the English text (the website can
+    // tell the difference and say so; see docs/localization-spike.md).
+    fallback: true,
+  },
   editor: lexicalEditor(),
   secret,
   typescript: {
