@@ -19,6 +19,6 @@ Everything in the 1.8a test list; whether the existing migration script and data
 - PR #38 (staging plan, cutover runbook) does not yet mention 1.8a; add one line to staging step S7 and runbook step 5 after #38 merges.
 
 ## Next steps, in order
-1. Owner answers ML-1 (timing). Gemini reviews this PR.
+1. ML-1 is decided (owner, 2026-10-25): languages first thing after launch; backend first. Gemini reviews this PR.
 2. Run the 1.8a spike (a throwaway branch and a local database; no server). Output `docs/localization-spike.md`.
 3. If go: a PR that turns localization on with English only; then the migration script and data layer get the language argument.

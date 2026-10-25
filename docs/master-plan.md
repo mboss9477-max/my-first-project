@@ -54,7 +54,7 @@ Acceptance: `main` contains every document above; `gh pr list` shows no stale PR
 | 1.6 | **Staging** on the server: Postgres and CMS containers on their own subdomain, memory limits, swap, env var names only | Claude with owner | ⏳ needs owner OK per step |
 | 1.7 | **Cloudflare Access** in front of the CMS admin (verify free-tier limits first) | Owner with Claude | ⏳ |
 | 1.8 | Data seam stage 2: images and article bodies become CMS-neutral | Claude | ⏳ |
-| 1.8a | **Language-readiness spike (before any content is migrated):** decide and test whether the new CMS is ready for several languages with only English filled in (Payload localization). Retrofitting languages after content is migrated is costly, so this comes first. Output: `docs/localization-spike.md` with a go / no-go, the list of fields that become per-language, and a decision-log line. Test list in the section below | Claude | ⏳ owner decides timing (question ML-1) |
+| 1.8a | **Language-readiness spike (before any content is migrated):** decide and test whether the new CMS is ready for several languages with only English filled in (Payload localization). Retrofitting languages after content is migrated is costly, so this comes first. Output: `docs/localization-spike.md` with a go / no-go, the list of fields that become per-language, and a decision-log line. Test list in the section below | Claude | ⏳ (ML-1 decided: languages after launch; this spike still comes first) |
 | 1.9 | Site reads from the CMS behind a switch; migration of all content and images with a per-article report | Claude | ⏳ (blocked on 1.8a for the migration rehearsal on staging; the script and switch are built) |
 | 1.10 | Editor experience: branding and admin changes from `docs/editor-ux.md` | Gemini, owner signs off visually | ⏳ |
 | 1.11 | Backups: nightly encrypted dump and media copy to off-server storage, **restore proven on a clean machine** | Claude with owner (account) | ⏳ |
@@ -129,7 +129,7 @@ Spanish and Mandarin through DeepL with **mandatory human review before publish*
 | 6.8 | Arabic: right-to-left site and editor, tested with an Arabic-competent human; Arabic ships as its own phase | Claude, Gemini | ⏳ |
 | 6.9 | Fonts, dates, numbers and reading time per language (the site formats dates in UK time today) | Gemini, Claude | ⏳ |
 
-**Open question for the owner, ML-1:** multilingual at launch, or first thing after launch? Recommendation: first thing after. English launches on schedule; because 1.8a makes the CMS language-ready now, adding a language later means turning it on and filling content, not rebuilding. Launching with languages needs reviewers lined up for each language before day one.
+**Decided by the owner (ML-1, 2026-10-25): languages come first thing after launch.** Backend first, in this plan's order; features and extra languages come after the backend is live. Because 1.8a makes the CMS language-ready now, adding a language later means turning it on and filling content, not rebuilding.
 
 ### M7: Launch day and after
 Checklist: backup restore re-proved; monitoring alerts tested; rollback rehearsed; owner's final visual pass on key pages; DNS and SSL healthy; announcement; first-week watch (errors, speed, signups). Post-launch: series and collections, curated nav, social accounts (the language switcher is now task 6.6 in M6).
