@@ -3,8 +3,11 @@
 import { headers } from "next/headers";
 
 import { addSubscriber } from "@/data";
+import { clientKey } from "@/lib/client-key";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// No whitespace and no control characters (a null byte makes Postgres refuse the row).
+const EMAIL_PATTERN = /^[^\s@\x00-\x1f\x7f]+@[^\s@\x00-\x1f\x7f]+\.[^\s@\x00-\x1f\x7f]+$/;
+const MAX_EMAIL_LENGTH = 254;
 
 export type SubscribeResult =
   | { ok: true }
@@ -24,18 +27,16 @@ export async function subscribe(
     .trim()
     .toLowerCase();
 
-  if (!EMAIL_PATTERN.test(email)) {
+  if (email.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(email)) {
     return { ok: false, error: "Enter a valid email address." };
   }
 
   // Which backend stores the address (Sanity or the CMS) is decided in the
   // data layer by CONTENT_SOURCE; this action only checks the form.
   const requestHeaders = await headers();
-  const forwarded = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const client = forwarded || requestHeaders.get("x-real-ip") || "unknown";
 
   return addSubscriber(email, {
-    client,
+    client: clientKey(requestHeaders),
     referer: requestHeaders.get("referer"),
   });
 }

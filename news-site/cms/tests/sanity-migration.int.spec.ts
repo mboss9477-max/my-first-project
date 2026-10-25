@@ -5,6 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   applyGuard,
   describeTarget,
+  fetchImageFromSanity,
+  UNREADABLE_TARGET,
   imageDownloadUrl,
   migrateFromSanity,
   renderReport,
@@ -268,6 +270,39 @@ describe('migration safety helpers', () => {
     expect(describeTarget('file:./local.db')).toBe('file:./local.db')
     expect(describeTarget(undefined)).toBe('file:./cms-trial.db')
     expect(describeTarget('postgres://user:secret@db.internal:5432/cms')).not.toContain('secret')
+  })
+
+  it('never prints a password or token for any kind of address (finding ADV2-7)', () => {
+    const urls = [
+      'mysql://user:supersecretpass@db.internal:3306/cms',
+      'libsql://db.example.turso.io?authToken=secret_token_value',
+      'postgres://user:p%40ss@db.internal/cms?sslmode=require&password=alsosecret',
+      'https://user:pw@host.example/db',
+    ]
+    for (const url of urls) {
+      const label = describeTarget(url)
+      for (const secret of ['supersecretpass', 'secret_token_value', 'p%40ss', 'alsosecret', 'pw', 'authToken', 'password=']) {
+        expect(label, `${url} leaked ${secret}`).not.toContain(secret)
+      }
+    }
+    expect(describeTarget('mysql://user:supersecretpass@db.internal:3306/cms')).toBe('mysql://db.internal:3306/cms')
+  })
+
+  it('refuses to write when the address cannot be read, even if the confirmation matches (finding ADV2-8)', () => {
+    expect(describeTarget('not a url at all')).toBe(UNREADABLE_TARGET)
+    const refusal = applyGuard({
+      DATABASE_URL: 'not a url at all',
+      MIGRATE_APPLY: '1',
+      MIGRATE_CONFIRM_TARGET: UNREADABLE_TARGET,
+    })
+    expect(refusal).toContain('cannot be read')
+  })
+
+  it('only downloads images from the Sanity image host (finding ADV2-9)', async () => {
+    const bad: SanityAsset = { ...asset('x'), url: 'http://169.254.169.254/latest/meta-data/' }
+    await expect(fetchImageFromSanity(bad, null)).rejects.toThrow(/refusing to download/)
+    const other: SanityAsset = { ...asset('x'), url: 'https://evil.example/images/a.jpg' }
+    await expect(fetchImageFromSanity(other, null)).rejects.toThrow(/refusing to download/)
   })
 
   it('allows a dry run always, and writing only with the typed target', () => {

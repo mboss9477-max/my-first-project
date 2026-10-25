@@ -17,9 +17,14 @@ import type { PayloadHandler } from 'payload'
  * - Addresses are lower-cased, so "A@x.com" and "a@x.com" are one subscriber.
  * - A backstop caps how many requests are served per window, so a flood that
  *   gets past the website's own per-visitor limit cannot fill the database.
+ *   Trade-off (accepted, Gemini's finding ADV2-1): it is one shared counter, so
+ *   a flood that gets past the website can also use up the window for real
+ *   readers. Real per-visitor limits belong at the edge (a Cloudflare rate-limit
+ *   rule), which is a later server step.
  * - Nothing here logs an address.
  */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// No whitespace, no control characters (a null byte makes Postgres refuse the row).
+const EMAIL_PATTERN = /^[^\s@\x00-\x1f\x7f]+@[^\s@\x00-\x1f\x7f]+\.[^\s@\x00-\x1f\x7f]+$/
 const MAX_EMAIL_LENGTH = 254
 const MAX_BODY_BYTES = 1_000
 
@@ -48,6 +53,29 @@ function secretMatches(provided: string | null, expected: string) {
   return a.length === b.length && timingSafeEqual(a, b)
 }
 
+/** Reads at most `limit` bytes of the request body; null when it is longer. */
+async function readCapped(
+  req: { body?: ReadableStream<Uint8Array> | null; text?: () => Promise<string> },
+  limit: number,
+): Promise<string | null> {
+  const stream = req.body
+  if (!stream) return typeof req.text === 'function' ? await req.text() : ''
+  const reader = stream.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > limit) {
+      await reader.cancel()
+      return null
+    }
+    chunks.push(value)
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
+
 const reply = (body: Record<string, unknown>, status: number) =>
   new Response(JSON.stringify(body), {
     status,
@@ -61,8 +89,13 @@ export const subscribeHandler: PayloadHandler = async (req) => {
     return reply({ ok: false, error: 'unauthorised' }, 401)
   }
 
-  const raw = typeof req.text === 'function' ? await req.text() : ''
-  if (raw.length > MAX_BODY_BYTES) return reply({ ok: false, error: 'body too large' }, 413)
+  // Refuse an oversized body before reading it, and never read more than the
+  // limit: the secret was already checked, but a caller that has it should
+  // still not be able to make the server buffer megabytes.
+  const declared = Number(req.headers.get('content-length') ?? 0)
+  if (declared > MAX_BODY_BYTES) return reply({ ok: false, error: 'body too large' }, 413)
+  const raw = await readCapped(req, MAX_BODY_BYTES)
+  if (raw === null) return reply({ ok: false, error: 'body too large' }, 413)
 
   let parsed: unknown
   try {
@@ -96,7 +129,14 @@ export const subscribeHandler: PayloadHandler = async (req) => {
       })
     ).totalDocs > 0
 
-  if (await exists()) return reply({ ok: true }, 200)
+  let present: boolean
+  try {
+    present = await exists()
+  } catch {
+    req.payload.logger.error('Newsletter signup lookup failed')
+    return reply({ ok: false, error: 'could not save' }, 500)
+  }
+  if (present) return reply({ ok: true }, 200)
 
   try {
     await req.payload.create({
@@ -108,7 +148,8 @@ export const subscribeHandler: PayloadHandler = async (req) => {
     // Two requests for the same address can race; the loser hits the unique
     // index. That is still success. The error text is never logged because a
     // database message can contain the address.
-    if (await exists()) return reply({ ok: true }, 200)
+    const alreadyThere = await exists().catch(() => false)
+    if (alreadyThere) return reply({ ok: true }, 200)
     req.payload.logger.error('Newsletter signup could not be saved')
     return reply({ ok: false, error: 'could not save' }, 500)
   }

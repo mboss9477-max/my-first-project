@@ -147,25 +147,38 @@ export const sanitySource: ContentSource = {
       };
     }
 
-    const existing = await writer.fetch<string | null>(
-      `*[_type == "newsletterSubscriber" && email == $email][0]._id`,
-      { email },
-    );
+    try {
+      const existing = await writer.fetch<string | null>(
+        `*[_type == "newsletterSubscriber" && email == $email][0]._id`,
+        { email },
+      );
 
-    if (existing) {
-      // Already on the list — this is success from the visitor's point of view.
+      if (existing) {
+        // Already on the list — this is success from the visitor's point of view.
+        return { ok: true };
+      }
+
+      // A missing or malformed Referer must not stop a signup; it just
+      // means no source is recorded.
+      let source: string | null = null;
+      try {
+        source = referer ? new URL(referer).pathname : null;
+      } catch {
+        source = null;
+      }
+
+      await writer.create({
+        _type: "newsletterSubscriber",
+        email,
+        subscribedAt: new Date().toISOString(),
+        source,
+      });
+
       return { ok: true };
+    } catch {
+      // A token without permission, an outage or a bad Referer used to crash
+      // the action; now the visitor gets a plain message instead.
+      return { ok: false, error: "Something went wrong — please try again." };
     }
-
-    const source = referer ? new URL(referer).pathname : null;
-
-    await writer.create({
-      _type: "newsletterSubscriber",
-      email,
-      subscribedAt: new Date().toISOString(),
-      source,
-    });
-
-    return { ok: true };
   },
 };

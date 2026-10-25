@@ -142,17 +142,20 @@ export function renderReport(report: Report): string {
 // ---- Safety guard for the command-line wrapper -----------------------------
 
 /** A label for the target database that is safe to print: no user name or password. */
+export const UNREADABLE_TARGET = '(unreadable DATABASE_URL)'
+
 export function describeTarget(databaseUrl: string | undefined): string {
   if (!databaseUrl) return 'file:./cms-trial.db'
-  if (/^postgres(ql)?:\/\//i.test(databaseUrl)) {
-    try {
-      const url = new URL(databaseUrl)
-      return `postgres://${url.host}${url.pathname}`
-    } catch {
-      return 'postgres://(unreadable address)'
-    }
+  if (/^file:/i.test(databaseUrl)) return databaseUrl
+  // Any other address: show scheme, host and database only. User name,
+  // password and query (which can carry a token) are never printed.
+  try {
+    const url = new URL(databaseUrl)
+    const scheme = /^postgres(ql)?:$/i.test(url.protocol) ? 'postgres:' : url.protocol
+    return `${scheme}//${url.host}${url.pathname}`
+  } catch {
+    return UNREADABLE_TARGET
   }
-  return databaseUrl
 }
 
 /**
@@ -162,6 +165,9 @@ export function describeTarget(databaseUrl: string | undefined): string {
 export function applyGuard(env: Record<string, string | undefined>): string | null {
   if (env.MIGRATE_APPLY !== '1') return null // dry run is always allowed
   const target = describeTarget(env.DATABASE_URL)
+  if (target === UNREADABLE_TARGET) {
+    return 'Refusing to write: DATABASE_URL cannot be read, so the target cannot be confirmed. Fix it and run a dry run first.'
+  }
   if (env.MIGRATE_CONFIRM_TARGET !== target) {
     return `Refusing to write. To write to ${target}, set MIGRATE_CONFIRM_TARGET to exactly that text. Run once without MIGRATE_APPLY to see the target and a dry-run report first.`
   }
@@ -196,7 +202,13 @@ export function imageDownloadUrl(asset: SanityAsset, crop: SanityImage['crop']):
 }
 
 /** Real image download for the command line. */
+const SANITY_IMAGE_PREFIX = 'https://cdn.sanity.io/images/'
+
 export const fetchImageFromSanity: ImageFetcher = async (asset, crop) => {
+  // Only ever fetch from Sanity's own image host, whatever the data says.
+  if (!asset.url.startsWith(SANITY_IMAGE_PREFIX)) {
+    throw new Error(`refusing to download from outside ${SANITY_IMAGE_PREFIX}`)
+  }
   const { url, mimetype } = imageDownloadUrl(asset, crop)
   const response = await fetch(url, { signal: AbortSignal.timeout(60_000) })
   if (!response.ok) throw new Error(`download failed (${response.status}) for ${url}`)
