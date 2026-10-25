@@ -3,6 +3,12 @@
  * Per server instance (it is not shared between instances), which is enough as
  * a first line of defence for one small server. Keys are held in memory only
  * and never logged or stored.
+ *
+ * Known limit (Gemini's finding ADV2-5): when more than `maxKeys` visitors are
+ * active at once, the oldest are forgotten and their allowance resets. Dropping
+ * expired entries first would change nothing here, because the visitor with the
+ * oldest activity is always the first to expire. What actually stops an attacker
+ * from flooding the map is that keys cannot be invented: see `client-key.ts`.
  */
 export function createRateLimiter(options: {
   windowMs: number;

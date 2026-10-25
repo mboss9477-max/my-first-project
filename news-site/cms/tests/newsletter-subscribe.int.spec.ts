@@ -107,6 +107,49 @@ describe('newsletter signup endpoint', () => {
     expect(await count()).toBe(before)
   })
 
+  it('rejects addresses with null bytes or control characters with a clean 400 (finding ADV2-3)', async () => {
+    const before = await count()
+    for (const email of ['a\u0000@example.test', 'a@exa\u0000mple.test', 'a\u0001b@example.test', 'a@example.test\u007f']) {
+      expect((await call({ body: { email } })).status).toBe(400)
+    }
+    expect(await count()).toBe(before)
+  })
+
+  it('refuses an oversized body by its declared length before reading it (finding ADV2-2)', async () => {
+    const headers = new Headers({ 'content-type': 'application/json', 'x-subscribe-secret': SECRET, 'content-length': '5000000' })
+    const request = new Request('http://cms.test/api/newsletter-subscribers/subscribe', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email: 'declared@example.test' }),
+    })
+    const response = await subscribeHandler(Object.assign(request, { payload }) as never)
+    expect(response.status).toBe(413)
+    expect((await emails()).includes('declared@example.test')).toBe(false)
+  })
+
+  it('stops reading a body that is longer than the limit even when the declared length lies', async () => {
+    const big = JSON.stringify({ email: 'big2@example.test', pad: 'x'.repeat(50_000) })
+    expect((await call({ rawBody: big })).status).toBe(413)
+  })
+
+  it('answers 500, not a crash, when saving and the follow-up lookup both fail', async () => {
+    const create = vi.spyOn(payload, 'create').mockRejectedValue(new Error('db down'))
+    const find = vi.spyOn(payload, 'find').mockRejectedValue(new Error('db down'))
+    try {
+      const request = new Request('http://cms.test/api/newsletter-subscribers/subscribe', {
+        method: 'POST',
+        headers: new Headers({ 'x-subscribe-secret': SECRET, 'content-type': 'application/json' }),
+        body: JSON.stringify({ email: 'dbdown@example.test' }),
+      })
+      // The first lookup throws too: that must not escape as an unhandled error.
+      const response = await subscribeHandler(Object.assign(request, { payload }) as never)
+      expect(response.status).toBe(500)
+    } finally {
+      create.mockRestore()
+      find.mockRestore()
+    }
+  })
+
   it('caps requests per window as a backstop, and recovers when the window passes', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     try {
