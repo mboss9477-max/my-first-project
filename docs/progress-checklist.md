@@ -56,6 +56,7 @@ The living record of **what was done** and **who tested it**. Updated by whoever
 | Branch protection on `main` (PR required, both CI checks required, admins included, no force-push) | Read back from the GitHub API | ➖ no access to repo settings |
 | Coolify dashboard on its own HTTPS address; Hetzner firewall allows only ports 22, 80, 443 | Port scan from outside: 8000, 6001, 6002, 8080 closed; site and dashboard answer 200 | ➖ no server access (S4) |
 | VPS audit: 4 vCPU, 7.75 GB RAM, 50 GB disk free, no swap, Node 22.19.0 for the site | Output the owner pasted from a read-only command | ➖ |
+| 2026-10-25 staging step S1: 2 GB swap file on the server (owner ran the commands; Claude read the pasted output) | Before: no swap, swappiness 60, ext4, 61 GB free, standard `/etc/fstab`. After: `swapon --show` lists `/swapfile` 2G; `free -h` Swap 2.0Gi; swappiness 10; `findmnt --verify` 0 errors, 2 harmless warnings; site `HTTP/2 200` before and after. **Not verified:** the swap returning after a reboot (one is pending) | ➖ |
 | Backup of repo history, untracked files and Claude data to `D:\CSNEWS-Backup` | `git bundle verify` ok; file counts 264/264 | ➖ |
 
 ## 5. Backend plan progress (`docs/backend-plan.md`)
