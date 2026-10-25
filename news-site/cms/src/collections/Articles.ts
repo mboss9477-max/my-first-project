@@ -1,6 +1,6 @@
 import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
-import { hasRole, isEditorOrAdmin } from '../access/roles'
+import { asksToPublish, hasRole, isEditorOrAdmin } from '../access/roles'
 import { notifyAfterArticleChange, notifyAfterArticleDelete } from '../hooks/notifyWeb'
 import { SLUG_PATTERN, slugify } from './slug'
 
@@ -37,7 +37,7 @@ const readArticleVersions: Access = ({ req: { user } }) => {
 const createArticles: Access = ({ req: { user }, data }) => {
   if (!user) return false
   if (hasRole(user, 'admin', 'editor')) return true
-  return data?._status !== 'published'
+  return !asksToPublish(data?._status)
 }
 
 /**
@@ -48,7 +48,7 @@ const createArticles: Access = ({ req: { user }, data }) => {
 const updateArticles: Access = ({ req: { user }, data }) => {
   if (!user) return false
   if (hasRole(user, 'admin', 'editor')) return true
-  if (data?._status === 'published') return false
+  if (asksToPublish(data?._status)) return false
   const ownDrafts: Where = {
     and: [{ createdBy: { equals: user.id } }, { _status: { equals: 'draft' } }],
   }
@@ -73,6 +73,8 @@ export const Articles: CollectionConfig = {
     drafts: {
       autosave: { interval: 2000 },
       schedulePublish: true,
+      // Each language is published (or not) on its own.
+      localizeStatus: true,
     },
   },
   hooks: {
@@ -89,10 +91,13 @@ export const Articles: CollectionConfig = {
     ],
   },
   fields: [
-    { name: 'headline', type: 'text', required: true },
+    { name: 'headline', type: 'text', required: true, localized: true },
     {
       name: 'slug',
       type: 'text',
+      // One address for every language (/es/article/<same-slug>): Arabic and
+      // Chinese headlines cannot make a Latin-letter slug, and one slug keeps
+      // the links between language versions trivial. See docs/localization-spike.md.
       unique: true,
       index: true,
       admin: {
@@ -123,6 +128,8 @@ export const Articles: CollectionConfig = {
     {
       name: 'reviewStatus',
       type: 'select',
+      // Each language is reviewed on its own.
+      localized: true,
       defaultValue: 'writing',
       options: [
         { label: 'Writing', value: 'writing' },
@@ -150,6 +157,7 @@ export const Articles: CollectionConfig = {
     {
       name: 'excerpt',
       type: 'textarea',
+      localized: true,
       maxLength: 280,
       admin: { description: 'One or two sentences. Shown on cards, search results and social shares.' },
     },
@@ -182,14 +190,14 @@ export const Articles: CollectionConfig = {
       admin: { description: 'Pin to the front-page lead slot. Newest featured story wins.' },
     },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
-    { name: 'body', type: 'richText' },
+    { name: 'body', type: 'richText', localized: true },
     {
       name: 'corrections',
       type: 'array',
       admin: { description: 'Appended to the foot of the article. Correcting in public is the point.' },
       fields: [
         { name: 'correctedAt', type: 'date', required: true },
-        { name: 'note', type: 'textarea', required: true },
+        { name: 'note', type: 'textarea', required: true, localized: true },
       ],
     },
     {

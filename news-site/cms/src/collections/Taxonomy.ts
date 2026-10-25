@@ -23,7 +23,7 @@ export const Categories: CollectionConfig = {
   admin: { useAsTitle: 'name' },
   access: taxonomyAccess,
   hooks: { afterChange: [notifyAfterTaxonomyChange('category')] },
-  fields: [{ name: 'name', type: 'text', required: true }, slugField],
+  fields: [{ name: 'name', type: 'text', required: true, localized: true }, slugField],
 }
 
 export const Topics: CollectionConfig = {
@@ -32,7 +32,7 @@ export const Topics: CollectionConfig = {
   access: taxonomyAccess,
   hooks: { afterChange: [notifyAfterTaxonomyChange('topic')] },
   fields: [
-    { name: 'name', type: 'text', required: true },
+    { name: 'name', type: 'text', required: true, localized: true },
     slugField,
     {
       name: 'trending',
@@ -51,7 +51,7 @@ export const Authors: CollectionConfig = {
   fields: [
     { name: 'name', type: 'text', required: true },
     slugField,
-    { name: 'role', type: 'text', admin: { description: 'e.g. "Political correspondent".' } },
-    { name: 'bio', type: 'textarea' },
+    { name: 'role', type: 'text', localized: true, admin: { description: 'e.g. "Political correspondent".' } },
+    { name: 'bio', type: 'textarea', localized: true },
   ],
 }
