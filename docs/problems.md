@@ -35,7 +35,7 @@ One list for everyone: the owner, Gemini (Antigravity), and either Claude chat. 
 | 15 | **Two Claude chats shared one folder**, so one switched the other's branch | Old Claude chat | Each Claude chat uses its own git worktree (`my-first-project-b` for the second one); the rule is going into `AGENTS.md` on its own branch | Old chat | in review |
 | 16 | Some early merges happened before Gemini reviewed them (marked as such in the checklist) | Old Claude chat | Gemini tests them after the fact and records it in the checklist | Gemini | open |
 | 17 | Gemini's checklist PR (#21) is stale | Old Claude chat | Gemini rebases or closes it | Gemini | open |
-| 18 | The legacy content tool must be **removed from the repo, not only from the live site** | Owner | After cutover: delete `news-site/studio`, its data code, its settings and dependencies, and its CI and README mentions (`docs/cutover-runbook.md`, gap G-7). Cannot happen before: the live website reads it today | Claude | waiting on cutover |
+| 18 | The legacy content tool must be **removed from the repo, not only from the live site** | Owner | After cutover, **7 days later** (owner, 2026-10-25): tag the last commit that has it, then delete `news-site/studio`, its data code, its settings and dependencies, and its CI and README mentions (`docs/cutover-runbook.md`, gap G-7). Cannot happen before: the live website reads it today | Claude | waiting on cutover |
 | 19 | Backend must be stress tested with many articles and traffic before launch, in about 1 to 2 months | Owner | A test plan once staging runs (memory, uploads, publishing bursts); staging measurement is step S10 | Claude, Gemini | open |
 
 ## How we talk to each other

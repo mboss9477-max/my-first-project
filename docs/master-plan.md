@@ -59,7 +59,7 @@ Acceptance: `main` contains every document above; `gh pr list` shows no stale PR
 | 1.10 | Editor experience: branding and admin changes from `docs/editor-ux.md` | Gemini, owner signs off visually | ⏳ |
 | 1.11 | Backups: nightly encrypted dump and media copy to off-server storage, **restore proven on a clean machine** | Claude with owner (account) | ⏳ |
 | 1.12 | **Quality gate G1** (see `backend-plan.md`): a non-technical writer publishes unaided, live page updates within 60 s, all articles migrated cleanly, restore proven, CI green, site and CMS measured together | Owner decides | ⏳ |
-| 1.13 | **Cutover**, with rollback plan; Sanity read-only for 30 days, shut down only on the owner's approval | Claude with owner | ⏳ |
+| 1.13 | **Cutover**, with rollback plan; Sanity read-only for 7 days (owner, 2026-10-25), then removed from the repo; the Sanity project is shut down only on the owner's approval | Claude with owner | ⏳ |
 
 #### Task 1.8a in detail: is the CMS language-ready?
 **Why now:** in a CMS with several languages, text fields such as the headline and body are stored once per language. Turning that on after hundreds of articles exist means moving every stored value into new per-language storage, with the live site reading it. Doing it before the first migration costs a few days; doing it after costs a data migration on live content.

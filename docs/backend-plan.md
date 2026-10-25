@@ -92,7 +92,7 @@ Goal: the live site reads articles from our backend, writers and editors use our
 | 1.17 | Load and memory measurement on the VPS: site, CMS, Postgres together, during an image upload and a traffic burst | C | 1.9, 1.6 | numbers in a handoff | public site stays responsive; CMS does not starve it | S5 (production-adjacent) | S |
 | **G1** | **Quality gate** (below). Owner reviews and decides on paid items | H | 1.1 to 1.17 | signed checklist | all gate items true | none | none |
 | 1.18 | **Production cutover** | C with H | G1 | live site on the new backend | see cutover steps below | **S5** | M |
-| 1.19 | After cutover: 30 days Sanity read-only, then owner decides on shutdown | H | 1.18 | shutdown decision | owner approval (Sanity is not shut down automatically) | S5 | none |
+| 1.19 | After cutover: 7 days Sanity read-only (owner, 2026-10-25), then remove it from the repo; shutting down the Sanity project stays the owner's decision | H | 1.18 | removal PR and shutdown decision | owner approval (Sanity is not shut down automatically) | S5 | none |
 
 **G1 quality gate (all must be true):**
 1. A non-technical writer completes create, edit, add image, save draft and submit for review without help.
