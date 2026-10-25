@@ -5,10 +5,13 @@ on:
   push:
     branches: [main]
 
-# A newer push supersedes an in-flight run on the same ref.
+# A newer push supersedes an in-flight run on the same pull-request branch.
+# Never on main: every merge there is a production deploy, and each merge's own
+# result must finish (when merges came a minute apart, two runs were cancelled
+# and those merges had no completed check of their own).
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   web:
