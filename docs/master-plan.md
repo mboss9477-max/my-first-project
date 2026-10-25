@@ -53,9 +53,9 @@ Acceptance: `main` contains every document above; `gh pr list` shows no stale PR
 | 1.5 | Data seam, stage 1 (all content reads behind one layer) | Claude | ✅ (merged, PR #15) |
 | 1.6 | **Staging** on the server: Postgres and CMS containers on their own subdomain, memory limits, swap, env var names only | Claude with owner | ⏳ needs owner OK per step |
 | 1.7 | **Cloudflare Access** in front of the CMS admin (verify free-tier limits first) | Owner with Claude | ⏳ |
-| 1.8 | Data seam stage 2: images and article bodies become CMS-neutral | Claude | ⏳ |
+| 1.8 | Data seam stage 2: images and article bodies become CMS-neutral | Claude | ✅ (merged, PRs #33 and #35) |
 | 1.8a | **Language-readiness spike (before any content is migrated):** decide and test whether the new CMS is ready for several languages with only English filled in (Payload localization). Result and the eleven answers: `docs/localization-spike.md` | Claude | ✅ **GO** (PR with the change in review; unblocks the staging migration rehearsal) |
-| 1.9 | Site reads from the CMS behind a switch; migration of all content and images with a per-article report | Claude | ⏳ (blocked on 1.8a for the migration rehearsal on staging; the script and switch are built) |
+| 1.9 | Site reads from the CMS behind a switch; migration of all content and images with a per-article report | Claude | 🔄 switch, CMS data layer and migration script merged (#35, #37); newsletter signup in review (#43); the migration rehearsal on staging waits for 1.8a and staging |
 | 1.10 | Editor experience: branding and admin changes from `docs/editor-ux.md` | Gemini, owner signs off visually | ⏳ |
 | 1.11 | Backups: nightly encrypted dump and media copy to off-server storage, **restore proven on a clean machine** | Claude with owner (account) | ⏳ |
 | 1.12 | **Quality gate G1** (see `backend-plan.md`): a non-technical writer publishes unaided, live page updates within 60 s, all articles migrated cleanly, restore proven, CI green, site and CMS measured together | Owner decides | ⏳ |

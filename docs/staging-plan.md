@@ -15,17 +15,23 @@ Plan task numbers: 1.4 (staging), 1.7 (Cloudflare Access), 1.11 (backups), 1.13 
 | Staging website | A second Coolify application from `main`, base directory `/news-site/web`, own subdomain, `CONTENT_SOURCE=cms` | Needed to test the publish webhook (a publish shows within 60 s) and to compare pages. The live website is not touched. |
 | Access gate | Cloudflare Access in front of the CMS admin | Owner decision 2026-10-24. |
 
-Subdomain names are the owner's choice; this plan uses `cms-staging` and `site-staging` under `csnews.news` as placeholders.
+The subdomain names are decided (D1 below): `cms-staging.csnews.news` and `site-staging.csnews.news`.
 
-## Decisions the owner must make first
+## Decisions (taken by the owner, 2026-10-25)
 
-| # | Decision | Recommendation |
-|---|----------|----------------|
-| D1 | Subdomain names for staging CMS and staging website | `cms-staging.csnews.news` and `site-staging.csnews.news` |
-| D2 | Memory budget: how much RAM the CMS and Postgres may use | CMS 1.5 GB, Postgres 0.75 GB as limits to start, then measure (task 1.17). These are estimates, not measurements. |
-| D3 | Swap size | 2 GB swap file (protects the public site if something spikes; see threat T25) |
-| D4 | Where off-server backups go (task 1.11) | The owner's own computer as a start, or Cloudflare's R2 free tier (whether it needs a payment method was not checked). No paid service before the quality gate. |
-| D5 | Production CMS after G1: a **new empty database and a second CMS app**, or **reset and reuse staging** | New empty database in the same Postgres, second CMS app, staging app stopped after cutover (no reset of anything). Reusing staging would mean wiping test accounts and articles, which is destructive and needs its own backup first. |
+| # | Decision | Decided |
+|---|----------|---------|
+| D1 | Subdomain names | `cms-staging.csnews.news` (CMS) and `site-staging.csnews.news` (staging website) |
+| D2 | Memory limits | CMS 1.5 GB and Postgres 0.75 GB to start, then measure (task 1.17). These are starting estimates, not measurements |
+| D3 | Swap | 2 GB swap file (protects the public site if something spikes; threat T25) |
+| D4 | Off-server backups (task 1.11) | The owner's own computer for now, and a **free cloud tier** is acceptable **even if it needs a payment method on file**: the owner adds the payment method and opens the account themselves (S3, S5). Usage must stay inside the free allowance, with a usage alert set. Which provider (findings below) is chosen at task 1.11 |
+| D5 | Production CMS after G1 | A **new empty database in the same Postgres** and a **second CMS app**; the staging CMS app is **stopped after cutover** |
+
+**Free cloud backup tiers, checked 2026-10-25 (not signed up for; nothing verified by trying):**
+- *Cloudflare R2:* its [pricing docs](https://developers.cloudflare.com/r2/pricing/) list 10 GB-month of standard storage free, plus 1 million write-type and 10 million read-type operations a month. Cloudflare's product page says no credit card is needed, but [community reports](https://community.cloudflare.com/t/why-using-r2-free-tier-involves-giving-card-info/945179) say enabling R2 asks for billing details (usage above the free amount is charged). **Unconfirmed from an official source; assume a payment method may be required until sign-up shows otherwise.**
+- *Backblaze B2:* its [pricing page](https://www.backblaze.com/cloud-storage/pricing) and help pages say 10 GB free that does not expire, no billing method needed to start, free downloads up to 3 times the stored amount, then a small per-GB charge for storage above 10 GB. **From the vendor's pages only; not verified by signing up.**
+- *Recommendation (owner decides at task 1.11):* Backblaze B2 first, because with no billing method on file it cannot charge by accident; Cloudflare R2 if the owner prefers one account with the DNS, accepting that usage above the free allowance would be billed to the payment method on file.
+- Our backups are small today (13 articles, 13 pictures, a database dump), so 10 GB is ample at first; media grows with use. Opening any account is an owner action (S5), and nothing is signed up for until the owner decides.
 
 ## Before any server change (owner)
 
@@ -38,11 +44,17 @@ These are the owner's own checks, listed so nothing is assumed:
 
 Each step: **what**, **who**, **check**, **undo**. "Owner OK" means a go in chat for that one step.
 
+**How server steps are run (owner's rule, 2026-10-25):** Claude's session cannot connect to the server. For each step Claude first tells the owner exactly what it will do and how to undo it, then waits for the owner's go. After the go, Claude gives the exact commands for the owner's own terminal, one block at a time, and waits for the owner to paste the output back before the next block. Nothing is run on the server by an agent.
+
 ### S1. Add a swap file (task: threat T25)
+**Status: done 2026-10-25, run by the owner in their own terminal.** Observed output: before, no swap and swappiness 60; after, `swapon --show` lists a 2 GB `/swapfile` (mode `-rw-------`), `free -h` shows 2.0 GB of swap with 0 used, swappiness reads 10, `findmnt --verify` reports 0 parse errors and 0 errors (two harmless warnings: swap files always trigger "non-bind mount source is a regular file", and systemd had not yet re-read `/etc/fstab`), and the live site answered 200 before and after. **Not yet verified:** that the swap comes back after a reboot (a reboot is pending on the server; check `swapon --show` afterwards). The original fstab is kept as `/etc/fstab.bak-before-swap` on the server.
+
 - **What:** on the server, create a 2 GB swap file, turn it on, make it permanent, set a low swappiness.
-- **Who:** Claude over SSH, after the owner's OK (and the owner must grant the SSH access: Gemini never uses it, S4).
-- **Check:** `free -h` shows the swap; the website still answers (home page, an article).
-- **Undo:** `swapoff` and delete the file; remove its line from `/etc/fstab`.
+- **Who:** the owner, in their own terminal, from commands Claude gives one block at a time (see "How server steps are run"). Gemini never touches the server (S4).
+- **Blocks:** (a) a read-only look: free memory, disk, existing swap, filesystem type, swappiness, `/etc/fstab`; (b) back up `/etc/fstab`, create `/swapfile` of 2 GB with mode 600, format it and turn it on; (c) add the one line to `/etc/fstab` and set `vm.swappiness=10` in its own file under `/etc/sysctl.d/`; (d) check.
+- **Check:** `free -h` shows 2.0 GB of swap; `swapon --show` lists `/swapfile`; `cat /proc/sys/vm/swappiness` prints 10; the live site still answers 200.
+- **Undo:** `swapoff /swapfile`; delete `/swapfile`; remove its line from `/etc/fstab` (a backup of the original is made first); delete the swappiness file and set `vm.swappiness` back to 60.
+- **Risk:** low. It uses 2 GB of about 50 GB free disk; no service is restarted; Coolify and Docker are not touched. A wrong `/etc/fstab` line is the one thing that could stop a reboot, which is why the file is backed up and checked first.
 
 ### S2. DNS records
 - **What:** two records in Cloudflare for the staging names. They start as **DNS only** so the server can obtain its HTTPS certificates. The CMS record is switched to **proxied** later (S6), because Cloudflare Access only works on proxied names.
